@@ -30,6 +30,29 @@ function indexConfigurableMeshes(){
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
 function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z);object.position.sub(center);const box2=new THREE.Box3().setFromObject(object);object.position.y-=box2.min.y;ground.position.y=-.003;const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
 
+function ensureProjectedUV(mesh,mat){
+  if(!mesh.geometry||!mat.textureUrl)return;
+  // CAD/STEP exports often have no useful UVs. Build planar UVs per triangle
+  // from the dominant face axis, using real panel dimensions in model units.
+  let g=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();
+  const pos=g.attributes.position, uv=new Float32Array(pos.count*2);
+  const panelW=(mat.panel?.[0]||48)*25.4, panelH=(mat.panel?.[1]||96)*25.4;
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),d=new THREE.Vector3(),n=new THREE.Vector3();
+  for(let i=0;i<pos.count;i+=3){
+    a.fromBufferAttribute(pos,i); b.fromBufferAttribute(pos,i+1); d.fromBufferAttribute(pos,i+2);
+    n.copy(b).sub(a).cross(d.clone().sub(a)).normalize();
+    const ax=Math.abs(n.x),ay=Math.abs(n.y),az=Math.abs(n.z);
+    for(let j=0;j<3;j++){
+      const x=pos.getX(i+j),y=pos.getY(i+j),z=pos.getZ(i+j); let u,v;
+      if(ay>=ax&&ay>=az){u=x/panelW;v=z/panelH}
+      else if(ax>=az){u=z/panelW;v=y/panelH}
+      else{u=x/panelW;v=y/panelH}
+      uv[(i+j)*2]=u;uv[(i+j)*2+1]=v;
+    }
+  }
+  g.setAttribute("uv",new THREE.BufferAttribute(uv,2));
+  mesh.geometry=g;
+}
 function loadTexture(mat){
   if(!mat.textureUrl) return Promise.resolve(null);
   if(textureCache.has(mat.textureUrl)) return textureCache.get(mat.textureUrl);
@@ -48,7 +71,7 @@ async function applyMaterial(part,mat){
       next.map.needsUpdate=true;
       // The source represents a real panel. Repeat is intentionally kept at 1:1
       // until mesh UVs/dimensions are normalized; panel dimensions stay in config.
-      next.map.repeat.set(1,1);
+      next.map.repeat.set(1,1); next.map.offset.set(0,0);
     }
     next.metalness=mat.metalness??0; next.roughness=mat.roughness??.68; next.needsUpdate=true; o.material=next;
   });
