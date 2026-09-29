@@ -1,7 +1,5 @@
-// Collez ici l'URL publique Cloudflare R2 du GLB.
-// Exemple: "https://assets.votredomaine.ca/models/tour-config.glb"
 window.FURNITURE_CONFIG = {
-  modelUrl: "",
+  modelUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/tour%20config.glb",
   configurableParts: [
     { label: "Structure", meshNames: ["tour config"], colors: [
       { name: "Chêne naturel", hex: "#B58C62" },
