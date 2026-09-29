@@ -27,7 +27,7 @@ function ensureUV(mesh){
 }
 function getTexture(url){
   if(!url)return Promise.resolve(null);if(textureCache.has(url))return textureCache.get(url);
-  const p=new Promise(resolve=>textureLoader.load(url,t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());resolve(t)},undefined,()=>resolve(null)));
+  const p=new Promise(resolve=>textureLoader.load(url,t=>{t.colorSpace=THREE.SRGBColorSpace;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());resolve(t)},undefined,e=>{console.error("Material texture failed",url,e);resolve(null)}));
   textureCache.set(url,p);return p;
 }
 async function applyMaterial(partIndex,names,mat){
