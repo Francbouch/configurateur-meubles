@@ -19,10 +19,9 @@ function frame(object){const box=new THREE.Box3().setFromObject(object),size=box
 function getPartMeshes(partIndex,names){if(!model)return[];const all=[];model.traverse(o=>{if(o.isMesh)all.push(o)});const exact=all.filter(o=>names.includes(o.name));return exact.length?exact:(all[partIndex]?[all[partIndex]]:[])}
 function ensureUV(mesh){
   if(mesh.userData.materialUV)return;
-  const src=mesh.geometry;
-  const g=src.index?src.toNonIndexed():src.clone();
-  const p=g.attributes.position,uv=new Float32Array(p.count*2);
-  const box=new THREE.Box3().setFromBufferAttribute(p),s=box.getSize(new THREE.Vector3());
+  const src=mesh.geometry,g=src.index?src.toNonIndexed():src.clone(),p=g.attributes.position;
+  const uv=new Float32Array(p.count*2),box=new THREE.Box3().setFromBufferAttribute(p);
+  const panelW=.6096,panelH=1.3207746;
   const a=new THREE.Vector3(),b=new THREE.Vector3(),d=new THREE.Vector3(),n=new THREE.Vector3(),e1=new THREE.Vector3(),e2=new THREE.Vector3();
   for(let i=0;i<p.count;i+=3){
     a.fromBufferAttribute(p,i);b.fromBufferAttribute(p,i+1);d.fromBufferAttribute(p,i+2);
@@ -30,9 +29,9 @@ function ensureUV(mesh){
     const ax=Math.abs(n.x),ay=Math.abs(n.y),az=Math.abs(n.z);
     for(let j=0;j<3;j++){
       const x=p.getX(i+j),y=p.getY(i+j),z=p.getZ(i+j);let u,v;
-      if(az>=ax&&az>=ay){u=(x-box.min.x)/(s.x||1);v=(y-box.min.y)/(s.y||1)}
-      else if(ax>=ay){u=(z-box.min.z)/(s.z||1);v=(y-box.min.y)/(s.y||1)}
-      else{u=(x-box.min.x)/(s.x||1);v=(z-box.min.z)/(s.z||1)}
+      if(az>=ax&&az>=ay){u=(x-box.min.x)/panelW;v=(y-box.min.y)/panelH}
+      else if(ax>=ay){u=(z-box.min.z)/panelW;v=(y-box.min.y)/panelH}
+      else{u=(x-box.min.x)/panelW;v=(z-box.min.z)/panelH}
       uv[2*(i+j)]=u;uv[2*(i+j)+1]=v;
     }
   }
