@@ -57,7 +57,7 @@ function buildControls(){
     const selected=wrap.querySelector(".selected"),grid=wrap.querySelector(".material-grid");
     part.materials.forEach((c,i)=>{
       const b=document.createElement("button");b.type="button";b.className="material-card"+(i===0?" active":"");
-      b.innerHTML='<span class="material-sample" style="background:'+c.hex+'"></span><span class="material-meta"><strong>'+c.name+'</strong><small>'+(c.code||"")+'</small></span>';
+      b.innerHTML='<span class="material-sample" style="background-color:'+c.hex+';'+(c.previewUrl?'background-image:url(&quot;'+c.previewUrl+'&quot;);background-size:cover;background-position:center;':'')+'"></span><span class="material-meta"><strong>'+c.name+'</strong><small>'+(c.code||"")+'</small></span>';
       b.onclick=()=>{grid.querySelectorAll(".material-card").forEach(x=>x.classList.remove("active"));b.classList.add("active");selected.textContent=c.name;applyMaterial(part.meshNames,c)};
       grid.appendChild(b);if(i===0)selected.textContent=c.name;
     });
