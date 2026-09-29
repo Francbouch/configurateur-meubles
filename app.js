@@ -18,12 +18,25 @@ function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(
 function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z); object.position.sub(center); const box2=new THREE.Box3().setFromObject(object); object.position.y-=box2.min.y; ground.position.y=-.003; const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))); camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
 function getPartMeshes(partIndex,names){if(!model)return[];const all=[];model.traverse(o=>{if(o.isMesh)all.push(o)});const exact=all.filter(o=>names.includes(o.name));return exact.length?exact:(all[partIndex]?[all[partIndex]]:[])}
 function ensureUV(mesh){
-  if(mesh.geometry.attributes.uv)return;
-  const g=mesh.geometry,index=g.index,pos=g.attributes.position;
-  const count=index?index.count:pos.count,uv=new Float32Array(pos.count*2);
-  const box=new THREE.Box3().setFromBufferAttribute(pos),size=box.getSize(new THREE.Vector3());
-  for(let i=0;i<pos.count;i++){uv[i*2]=(pos.getX(i)-box.min.x)/(size.x||1);uv[i*2+1]=(pos.getY(i)-box.min.y)/(size.y||1)}
-  g.setAttribute("uv",new THREE.BufferAttribute(uv,2));
+  if(mesh.userData.materialUV)return;
+  const src=mesh.geometry;
+  const g=src.index?src.toNonIndexed():src.clone();
+  const p=g.attributes.position,uv=new Float32Array(p.count*2);
+  const box=new THREE.Box3().setFromBufferAttribute(p),s=box.getSize(new THREE.Vector3());
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),d=new THREE.Vector3(),n=new THREE.Vector3(),e1=new THREE.Vector3(),e2=new THREE.Vector3();
+  for(let i=0;i<p.count;i+=3){
+    a.fromBufferAttribute(p,i);b.fromBufferAttribute(p,i+1);d.fromBufferAttribute(p,i+2);
+    e1.copy(b).sub(a);e2.copy(d).sub(a);n.copy(e1).cross(e2).normalize();
+    const ax=Math.abs(n.x),ay=Math.abs(n.y),az=Math.abs(n.z);
+    for(let j=0;j<3;j++){
+      const x=p.getX(i+j),y=p.getY(i+j),z=p.getZ(i+j);let u,v;
+      if(az>=ax&&az>=ay){u=(x-box.min.x)/(s.x||1);v=(y-box.min.y)/(s.y||1)}
+      else if(ax>=ay){u=(z-box.min.z)/(s.z||1);v=(y-box.min.y)/(s.y||1)}
+      else{u=(x-box.min.x)/(s.x||1);v=(z-box.min.z)/(s.z||1)}
+      uv[2*(i+j)]=u;uv[2*(i+j)+1]=v;
+    }
+  }
+  g.setAttribute("uv",new THREE.BufferAttribute(uv,2));mesh.geometry=g;mesh.userData.materialUV=true;
 }
 function getTexture(url){
   if(!url)return Promise.resolve(null);if(textureCache.has(url))return textureCache.get(url);
