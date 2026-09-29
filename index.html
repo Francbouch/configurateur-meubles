@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#f3f1ec" />
+  <title>Configurateur de meubles</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">FB <span>Mobilier</span></a>
+    <span class="prototype">Configurateur 3D</span>
+  </header>
+  <main class="app">
+    <section class="viewer-card">
+      <div id="viewer">
+        <div id="loading" class="loading"><span></span><p>Chargement du meuble…</p></div>
+        <div id="empty" class="empty hidden">
+          <strong>Modèle 3D prêt à être branché</strong>
+          <p>Ajoutez l’URL publique du GLB dans <code>config.js</code>.</p>
+        </div>
+      </div>
+      <div class="viewer-tools">
+        <button id="resetView" type="button">Vue initiale</button>
+        <span>Glisser pour tourner · Molette pour zoomer</span>
+      </div>
+    </section>
+    <aside class="panel">
+      <p class="eyebrow">Collection</p>
+      <h1>Tour</h1>
+      <p class="intro">Personnalisez votre meuble et visualisez le résultat instantanément en 3D.</p>
+      <div id="materialControls" class="controls"></div>
+      <div class="summary">
+        <span>Configuration</span>
+        <strong id="configurationName">Sur mesure</strong>
+      </div>
+      <button class="primary" type="button">Demander une soumission</button>
+      <p class="note">Prototype — dimensions, prix et options seront ajoutés à la prochaine étape.</p>
+    </aside>
+  </main>
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
