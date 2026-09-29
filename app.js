@@ -51,7 +51,7 @@ async function applyMaterial(names,mat){
 }
 function buildControls(){
   const root=document.querySelector("#materialControls"); root.innerHTML="";
-  cfg.configurableParts.forEach(part=>{
+  cfg.configurableParts.forEach((part,partIndex)=>{
     const wrap=document.createElement("section");wrap.className="control";
     wrap.innerHTML='<div class="control-head"><div><span class="step">Matériau</span><strong>'+part.label+'</strong></div><span class="selected"></span></div><div class="material-grid"></div>';
     const selected=wrap.querySelector(".selected"),grid=wrap.querySelector(".material-grid");
