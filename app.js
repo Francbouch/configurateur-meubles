@@ -30,7 +30,7 @@ function indexConfigurableMeshes(){
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
 function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z);object.position.sub(center);const box2=new THREE.Box3().setFromObject(object);object.position.y-=box2.min.y;ground.position.y=-.003;const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
 
-function ensureProjectedUV(mesh,mat){
+function ensureProjectedUV(mesh,mat){\n  try{
   if(!mesh.geometry||!mat.textureUrl)return;
   // CAD/STEP exports often have no useful UVs. Build planar UVs per triangle
   // from the dominant face axis. The GLB is exported in metres, while panel dimensions are inches.
@@ -96,5 +96,5 @@ function buildControls(){
 }
 buildControls();
 document.querySelector("#resetView").onclick=()=>{camera.position.copy(home.position);controls.target.copy(home.target);controls.update()};
-if(!cfg.modelUrl){loading.classList.add("hidden");empty.classList.remove("hidden")}else new GLTFLoader().load(cfg.modelUrl,g=>{model=g.scene;scene.add(model);model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});indexConfigurableMeshes();frame(model);cfg.configurableParts.forEach(p=>p.materials[0]&&applyMaterial(p,p.materials[0]));loading.classList.add("hidden")},undefined,e=>{console.error(e);loading.classList.add("hidden");empty.classList.remove("hidden");empty.querySelector("strong").textContent="Impossible de charger le modèle"});
+if(!cfg.modelUrl){loading.classList.add("hidden");empty.classList.remove("hidden")}else new GLTFLoader().load(cfg.modelUrl,g=>{model=g.scene;scene.add(model);model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});indexConfigurableMeshes();frame(model);loading.classList.add("hidden");requestAnimationFrame(()=>cfg.configurableParts.forEach(p=>p.materials[0]&&applyMaterial(p,p.materials[0])))},undefined,e=>{console.error(e);loading.classList.add("hidden");empty.classList.remove("hidden");empty.querySelector("strong").textContent="Impossible de charger le modèle"});
 renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});
