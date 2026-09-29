@@ -16,7 +16,21 @@ let model,home={position:new THREE.Vector3(),target:new THREE.Vector3()};
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
 function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z); object.position.sub(center); const box2=new THREE.Box3().setFromObject(object); object.position.y-=box2.min.y; ground.position.y=-.003; const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))); camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
 function applyColor(names,hex){if(!model)return; model.traverse(o=>{if(o.isMesh&&names.includes(o.name)){o.material=o.material.clone();o.material.color.set(hex);o.material.metalness=.05;o.material.roughness=.62;o.material.needsUpdate=true}})}
-function buildControls(){const root=document.querySelector("#materialControls"); cfg.configurableParts.forEach((part,pi)=>{const wrap=document.createElement("div");wrap.className="control";wrap.innerHTML='<div class="control-head"><strong>'+part.label+'</strong><span class="selected"></span></div><div class="swatches"></div>';const selected=wrap.querySelector(".selected"),swatches=wrap.querySelector(".swatches");part.colors.forEach((c,i)=>{const b=document.createElement("button");b.className="swatch"+(i===0?" active":"");b.style.background=c.hex;b.title=c.name;b.setAttribute("aria-label",c.name);b.onclick=()=>{swatches.querySelectorAll(".swatch").forEach(x=>x.classList.remove("active"));b.classList.add("active");selected.textContent=c.name;applyColor(part.meshNames,c.hex)};swatches.appendChild(b);if(i===0)selected.textContent=c.name});root.appendChild(wrap)})}
+function buildControls(){
+  const root=document.querySelector("#materialControls"); root.innerHTML="";
+  cfg.configurableParts.forEach(part=>{
+    const wrap=document.createElement("section");wrap.className="control";
+    wrap.innerHTML='<div class="control-head"><div><span class="step">Matériau</span><strong>'+part.label+'</strong></div><span class="selected"></span></div><div class="material-grid"></div>';
+    const selected=wrap.querySelector(".selected"),grid=wrap.querySelector(".material-grid");
+    part.colors.forEach((c,i)=>{
+      const b=document.createElement("button");b.type="button";b.className="material-card"+(i===0?" active":"");
+      b.innerHTML='<span class="material-sample" style="background:'+c.hex+'"></span><span class="material-meta"><strong>'+c.name+'</strong><small>'+(c.code||"")+'</small></span>';
+      b.onclick=()=>{grid.querySelectorAll(".material-card").forEach(x=>x.classList.remove("active"));b.classList.add("active");selected.textContent=c.name;applyColor(part.meshNames,c.hex)};
+      grid.appendChild(b);if(i===0)selected.textContent=c.name;
+    });
+    root.appendChild(wrap);
+  });
+}
 buildControls();
 document.querySelector("#resetView").onclick=()=>{camera.position.copy(home.position);controls.target.copy(home.target);controls.update()};
 if(!cfg.modelUrl){loading.classList.add("hidden");empty.classList.remove("hidden")}else new GLTFLoader().load(cfg.modelUrl,g=>{model=g.scene;scene.add(model);model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});frame(model);cfg.configurableParts.forEach(p=>p.colors[0]&&applyColor(p.meshNames,p.colors[0].hex));loading.classList.add("hidden")},undefined,e=>{console.error(e);loading.classList.add("hidden");empty.classList.remove("hidden");empty.querySelector("strong").textContent="Impossible de charger le modèle"});
