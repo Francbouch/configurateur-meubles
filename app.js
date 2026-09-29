@@ -33,10 +33,10 @@ function frame(object){const box=new THREE.Box3().setFromObject(object),size=box
 function ensureProjectedUV(mesh,mat){
   if(!mesh.geometry||!mat.textureUrl)return;
   // CAD/STEP exports often have no useful UVs. Build planar UVs per triangle
-  // from the dominant face axis, using real panel dimensions in model units.
+  // from the dominant face axis. The GLB is exported in metres, while panel dimensions are inches.
   let g=mesh.geometry.index?mesh.geometry.toNonIndexed():mesh.geometry.clone();
   const pos=g.attributes.position, uv=new Float32Array(pos.count*2);
-  const panelW=(mat.panel?.[0]||48)*25.4, panelH=(mat.panel?.[1]||96)*25.4;
+  const panelW=(mat.panel?.[0]||48)*0.0254, panelH=(mat.panel?.[1]||96)*0.0254;
   const a=new THREE.Vector3(),b=new THREE.Vector3(),d=new THREE.Vector3(),n=new THREE.Vector3();
   for(let i=0;i<pos.count;i+=3){
     a.fromBufferAttribute(pos,i); b.fromBufferAttribute(pos,i+1); d.fromBufferAttribute(pos,i+2);
