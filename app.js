@@ -64,7 +64,7 @@ async function applyMaterial(part,mat){
   const baseTexture=await loadTexture(mat);
   const targets=partMeshes.get(part.label)||[];
   targets.forEach(o=>{
-    const next=o.material.clone();
+    ensureProjectedUV(o,mat);\n    const next=o.material.clone();
     next.color.set(baseTexture?0xffffff:mat.hex);
     next.map=baseTexture?baseTexture.clone():null;
     if(next.map){
