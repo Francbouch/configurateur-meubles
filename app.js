@@ -45,7 +45,7 @@ function getTexture(url){
 }
 async function applyMaterial(partIndex,names,mat){
   const targets=getPartMeshes(partIndex,names),tex=await getTexture(mat.previewUrl);
-  targets.forEach(o=>{if(tex)ensureUV(o);const m=o.material.clone();m.color.set(tex?0xffffff:mat.hex);m.map=tex?tex.clone():null;if(m.map){const box=new THREE.Box3().setFromObject(o),s=box.getSize(new THREE.Vector3());const panelW=.6096,panelH=1.3207746;const vertical=Math.max(s.y,1e-6);const horizontal=Math.max(s.x,s.z,1e-6);m.map.repeat.set(Math.max(horizontal/panelW,.35),Math.max(vertical/panelH,.35));m.map.needsUpdate=true}m.metalness=0;m.roughness=.68;m.needsUpdate=true;o.material=m});
+  targets.forEach(o=>{if(tex)ensureUV(o);const m=o.material.clone();m.color.set(tex?0xffffff:mat.hex);m.map=tex?tex.clone():null;if(m.map){m.map.repeat.set(1,1);m.map.needsUpdate=true}m.metalness=0;m.roughness=.68;m.needsUpdate=true;o.material=m});
 }
 function buildControls(){
   const root=document.querySelector("#materialControls");root.innerHTML="";
