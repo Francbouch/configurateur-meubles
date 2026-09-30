@@ -123,7 +123,7 @@ function materialPreview(item){
 }
 
 function buildControls(){
-  controlsRoot.innerHTML=\
+  controlsRoot.innerHTML=
     '<div class="part-list"></div>'+
     '<div class="material-choice"><div class="choice-head"><span>Matériaux</span><strong class="choice-part"></strong></div><div class="material-grid"></div></div>';
 
