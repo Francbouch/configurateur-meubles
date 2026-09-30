@@ -136,6 +136,7 @@ function buildControls(){
   function allowedMaterials(part){
     if(part.mesh!=="CAISSON" && part.mesh!=="INTERIEUR") return MATERIALS;
     const facadeCode=selectedCodes.get("FACADE");
+    if(facadeCode==="NOIR" || facadeCode==="175") return MATERIALS;
     return MATERIALS.filter(item=>item.code==="NOIR" || item.code==="175" || item.code===facadeCode);
   }
 
