@@ -3,12 +3,12 @@ window.FURNITURE_CONFIG = {
   materials: [
     { name:"Esprit Libre", code:"580", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l580-web.jpg", hex:"#B89A77" },
     { name:"Beauté Naturelle", code:"581", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l581-web.jpg", hex:"#C8A77A" },
-    { name:"Fashionista", code:"582", authored:true, hex:"#B39A80" },
-    { name:"588", code:"588", textureUrl:null, hex:"#A88D72" },
-    { name:"592", code:"592", authored:true, hex:"#B39B83" },
+    { name:"Fashionista", code:"582", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l582-web.jpg", authored:true, hex:"#B39A80" },
+    { name:"588", code:"588", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l588.jpg", hex:"#A88D72" },
+    { name:"592", code:"592", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l592.jpg", authored:true, hex:"#B39B83" },
     { name:"Roc Solide", code:"831", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l831-web.jpg", hex:"#777874" },
-    { name:"832", code:"832", textureUrl:null, hex:"#777777" },
-    { name:"Blanc", code:"175", textureUrl:null, hex:"#F4F3EE" },
+    { name:"832", code:"832", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l832.jpg", hex:"#777777" },
+    { name:"Blanc", code:"175", textureUrl:"https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l175.jpg", hex:"#F4F3EE" },
     { name:"Noir", code:"NOIR", textureUrl:null, hex:"#171717" }
   ],
   parts: [
