@@ -47,20 +47,36 @@ function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(
 function frame(object){
   const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z);
   object.position.sub(center);
-  let b=new THREE.Box3().setFromObject(object);
-  object.position.y-=b.min.y;
-  b=new THREE.Box3().setFromObject(object);
-  // Flush the furniture's rear face to the 25' room's rear wall.
-  object.position.z+=(-ROOM/2+.055)-b.min.z;
-  b=new THREE.Box3().setFromObject(object);
-  const c=b.getCenter(new THREE.Vector3());
+  let b=new THREE.Box3().setFromObject(object); object.position.y-=b.min.y; b=new THREE.Box3().setFromObject(object);
+
+  // Normalize the showroom from the model's actual height. The visual proportions remain
+  // exactly 25' x 25' x 9', regardless of the unit exported by SolidWorks/Blender.
+  const scalePerFoot=size.y/7.0; // this cabinet is treated as a ~7' tall real furniture piece
+  const room=25*scalePerFoot, wallH=9*scalePerFoot;
+  floor.geometry.dispose(); floor.geometry=new THREE.PlaneGeometry(room,room);
+  ground.geometry.dispose(); ground.geometry=new THREE.PlaneGeometry(room,room);
+  backWall.geometry.dispose(); backWall.geometry=new THREE.PlaneGeometry(room,wallH);
+  backWall.position.set(0,wallH/2,-room/2);
+  baseboard.geometry.dispose(); baseboard.geometry=new THREE.BoxGeometry(room,.16*scalePerFoot,.045*scalePerFoot);
+  baseboard.position.set(0,.08*scalePerFoot,-room/2+.023*scalePerFoot);
+
+  // Remove old plank guide lines; use the clean oak plane for a premium showroom look.
+  roomGroup.children.filter(o=>o.isLine).forEach(o=>o.visible=false);
+
+  // Put the actual rear face of the cabinet against the wall.
+  object.position.z+=(-room/2+.055*scalePerFoot)-b.min.z;
+  b=new THREE.Box3().setFromObject(object); const c=b.getCenter(new THREE.Vector3());
+
+  windowLight.position.set(-room*.38,wallH*.62,c.z+room*.28); windowLight.lookAt(c.x,wallH*.42,-room/2);
+  sun.position.set(-room*.35,wallH*1.6,c.z+room*.4);
+
   const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
-  camera.near=Math.max(max/1000,.001); camera.far=100; camera.updateProjectionMatrix();
-  camera.position.set(c.x+d*.92,size.y*.58,c.z+d*1.55);
+  camera.near=Math.max(max/1000,.001);camera.far=Math.max(room*5,max*100);camera.updateProjectionMatrix();
+  camera.position.set(c.x+d*.9,size.y*.62,c.z+d*1.6);
   controls.target.set(c.x,size.y*.43,c.z);
-  controls.minDistance=max*.7; controls.maxDistance=Math.min(max*3.2,ROOM*.72);
-  controls.minAzimuthAngle=-Math.PI*.42; controls.maxAzimuthAngle=Math.PI*.42;
-  controls.update(); home={position:camera.position.clone(),target:controls.target.clone()};
+  controls.minDistance=max*.7;controls.maxDistance=Math.min(max*3.3,room*.7);
+  controls.minAzimuthAngle=-Math.PI*.4;controls.maxAzimuthAngle=Math.PI*.4;
+  controls.update();home={position:camera.position.clone(),target:controls.target.clone()};
 }
 function getPartMeshes(partIndex,names){if(!model)return[];const all=[];model.traverse(o=>{if(o.isMesh)all.push(o)});const exact=all.filter(o=>names.includes(o.name));return exact.length?exact:(all[partIndex]?[all[partIndex]]:[])}
 function ensureUV(mesh){
