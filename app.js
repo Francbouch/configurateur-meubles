@@ -104,35 +104,63 @@ function applyMaterial(meshName,code){
   mesh.material.needsUpdate=true;
 }
 
+const selectedCodes=new Map(PARTS.map(part=>[part.mesh,part.initial]));
+let activePart=PARTS[0];
+
+function materialPreview(item){
+  return item.src
+    ? 'background-image:url('+item.src+');background-size:cover;background-position:center;'
+    : 'background:#000;';
+}
+
 function buildControls(){
-  controlsRoot.innerHTML="";
-  PARTS.forEach(part=>{
-    const section=document.createElement("section");
-    section.className="control";
-    section.innerHTML='<div class="control-head"><div><span class="step">Matériau</span><strong>'+part.label+'</strong></div><span class="selected"></span></div><div class="material-grid"></div>';
-    const grid=section.querySelector(".material-grid");
-    const selected=section.querySelector(".selected");
+  controlsRoot.innerHTML=\
+    '<div class="part-list"></div>'+
+    '<div class="material-choice"><div class="choice-head"><span>Matériaux</span><strong class="choice-part"></strong></div><div class="material-grid"></div></div>';
+
+  const partList=controlsRoot.querySelector(".part-list");
+  const choicePart=controlsRoot.querySelector(".choice-part");
+  const grid=controlsRoot.querySelector(".material-grid");
+
+  function renderMaterials(){
+    choicePart.textContent=activePart.label;
+    grid.innerHTML="";
+    const current=selectedCodes.get(activePart.mesh);
 
     MATERIALS.forEach(item=>{
       const button=document.createElement("button");
       button.type="button";
-      button.className="material-card"+(item.code===part.initial?" active":"");
-      const preview=item.src
-        ? 'background-image:url('+item.src+');background-size:cover;background-position:center;'
-        : 'background:#000;';
-      button.innerHTML='<span class="material-sample" style="'+preview+'"></span><span class="material-meta"><strong>'+item.name+'</strong><small>'+item.code+'</small></span>';
-      if(item.code===part.initial)selected.textContent=item.name;
-
+      button.className="material-card"+(item.code===current?" active":"");
+      button.innerHTML='<span class="material-sample" style="'+materialPreview(item)+'"></span><span class="material-meta"><strong>'+item.name+'</strong><small>'+item.code+'</small></span>';
       button.onclick=()=>{
-        grid.querySelectorAll(".material-card").forEach(x=>x.classList.remove("active"));
-        button.classList.add("active");
-        selected.textContent=item.name;
-        applyMaterial(part.mesh,item.code);
+        selectedCodes.set(activePart.mesh,item.code);
+        applyMaterial(activePart.mesh,item.code);
+        renderPartList();
+        renderMaterials();
       };
       grid.appendChild(button);
     });
-    controlsRoot.appendChild(section);
-  });
+  }
+
+  function renderPartList(){
+    partList.innerHTML="";
+    PARTS.forEach(part=>{
+      const current=MATERIALS.find(item=>item.code===selectedCodes.get(part.mesh));
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="part-row"+(part.mesh===activePart.mesh?" active":"");
+      button.innerHTML='<span class="part-name">'+part.label+'</span><span class="part-current"><span class="part-swatch" style="'+materialPreview(current)+'"></span><span>'+current.name+'</span></span><span class="part-arrow">›</span>';
+      button.onclick=()=>{
+        activePart=part;
+        renderPartList();
+        renderMaterials();
+      };
+      partList.appendChild(button);
+    });
+  }
+
+  renderPartList();
+  renderMaterials();
 }
 
 document.querySelector("#resetView").onclick=()=>{
