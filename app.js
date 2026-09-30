@@ -107,13 +107,15 @@ function applyMaterial(meshName,code){
 const selectedCodes=new Map(PARTS.map(part=>[part.mesh,part.initial]));
 let activePart=null;
 
-function syncInitialCaisson(){
+function syncDependentParts(){
   const facadeCode=selectedCodes.get("FACADE");
-  const caissonCode=selectedCodes.get("CAISSON");
-  if(caissonCode!=="NOIR" && caissonCode!=="175" && caissonCode!==facadeCode){
-    selectedCodes.set("CAISSON",facadeCode);
-    applyMaterial("CAISSON",facadeCode);
-  }
+  ["CAISSON","INTERIEUR"].forEach(mesh=>{
+    const current=selectedCodes.get(mesh);
+    if(current!=="NOIR" && current!=="175" && current!==facadeCode){
+      selectedCodes.set(mesh,facadeCode);
+      applyMaterial(mesh,facadeCode);
+    }
+  });
 }
 
 function materialPreview(item){
