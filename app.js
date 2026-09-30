@@ -31,7 +31,7 @@ function ensureUV(mesh){
     for(let j=0;j<3;j++){
       const x=p.getX(i+j),y=p.getY(i+j),z=p.getZ(i+j);let u,v;
       if(az>=ax&&az>=ay){u=(x-box.min.x)/(s.x||1);v=(y-box.min.y)/(s.y||1)}
-      else if(ax>=ay){u=(y-box.min.y)/(s.y||1);v=(z-box.min.z)/(s.z||1)}
+      else if(ax>=ay){u=(z-box.min.z)/(s.z||1);v=(y-box.min.y)/(s.y||1)}
       else{u=(x-box.min.x)/(s.x||1);v=(z-box.min.z)/(s.z||1)}
       uv[2*(i+j)]=u;uv[2*(i+j)+1]=v;
     }
@@ -45,7 +45,7 @@ function getTexture(url){
 }
 async function applyMaterial(partIndex,names,mat){
   const targets=getPartMeshes(partIndex,names),tex=await getTexture(mat.previewUrl);
-  targets.forEach(o=>{if(tex)ensureUV(o);const m=o.material.clone();m.color.set(tex?0xffffff:mat.hex);m.map=tex?tex.clone():null;if(m.map){const box=new THREE.Box3().setFromObject(o),s=box.getSize(new THREE.Vector3());const panelW=.6096,panelH=1.3207746;const vertical=Math.max(s.y,1e-6);const horizontal=Math.max(s.x,s.z,1e-6);m.map.repeat.set(Math.max(horizontal/panelW*.42,.18),Math.max(vertical/panelH*.42,.18));m.map.needsUpdate=true}m.metalness=0;m.roughness=.68;m.needsUpdate=true;o.material=m});
+  targets.forEach(o=>{if(tex)ensureUV(o);const m=o.material.clone();m.color.set(tex?0xffffff:mat.hex);m.map=tex?tex.clone():null;if(m.map){const box=new THREE.Box3().setFromObject(o),s=box.getSize(new THREE.Vector3());const panelW=.6096,panelH=1.3207746;const vertical=Math.max(s.y,1e-6);const horizontal=Math.max(s.x,s.z,1e-6);m.map.repeat.set(Math.max(horizontal/panelW,.35),Math.max(vertical/panelH,.35));m.map.needsUpdate=true}m.metalness=0;m.roughness=.68;m.needsUpdate=true;o.material=m});
 }
 function buildControls(){
   const root=document.querySelector("#materialControls");root.innerHTML="";
