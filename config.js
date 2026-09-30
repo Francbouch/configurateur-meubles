@@ -1,7 +1,7 @@
 window.FURNITURE_CONFIG = {
-  modelUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/tour%20config.glb",
+  modelUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/Lit_cabinet_Fran%C3%A7ois_UV.glb",
   configurableParts: [
-    { label: "Caisson", meshNames: ["tour config"], colors: [
+    { label: "Caisson", meshNames: ["CAISSON"], colors: [
       { name: "Beauté Naturelle", code: "L581K", hex: "#C8A77A", previewUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l581-web.jpg" },
       { name: "Esprit Libre", code: "L580K", hex: "#B89A77", previewUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l580-web.jpg" },
       { name: "Fashionista", code: "L582K", hex: "#B39A80", previewUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l582-web.jpg" },
@@ -9,7 +9,7 @@ window.FURNITURE_CONFIG = {
       { name: "Blanc", code: "L175C", hex: "#F4F3EE" },
       { name: "Noir", code: "BLC11", hex: "#171717" }
     ]},
-    { label: "Façade", meshNames: ["tour config.001"], colors: [
+    { label: "Façade", meshNames: ["FACADE"], colors: [
       { name: "Beauté Naturelle", code: "L581K", hex: "#C8A77A", previewUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l581-web.jpg" },
       { name: "Esprit Libre", code: "L580K", hex: "#B89A77", previewUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l580-web.jpg" },
       { name: "Fashionista", code: "L582K", hex: "#B39A80", previewUrl: "https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/l582-web.jpg" },
