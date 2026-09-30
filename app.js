@@ -4,95 +4,18 @@ import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GL
 
 const cfg=window.FURNITURE_CONFIG;
 const host=document.querySelector("#viewer"),loading=document.querySelector("#loading"),empty=document.querySelector("#empty");
-const scene=new THREE.Scene(); scene.background=new THREE.Color(0xe9e6df);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0xffffff);
 const camera=new THREE.PerspectiveCamera(35,1,.01,1000);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=.92; renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; host.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.06; controls.minPolarAngle=.2; controls.maxPolarAngle=Math.PI/2+.08; controls.minAzimuthAngle=-Math.PI*.48; controls.maxAzimuthAngle=Math.PI*.48;
-scene.add(new THREE.HemisphereLight(0xfffbf5,0x81776c,1.35));
-const key=new THREE.DirectionalLight(0xfff8ed,2.15); key.position.set(4,7,5); key.castShadow=true; scene.add(key);
-const fill=new THREE.DirectionalLight(0xffead1,.65); fill.position.set(-5,3,-2); scene.add(fill);
-const FT=.3048, ROOM=25*FT, WALL_H=9*FT;
-const roomGroup=new THREE.Group(); scene.add(roomGroup);
-
-// Luxury oak floor — true 25' x 25' footprint.
-const floorMat=new THREE.MeshStandardMaterial({color:0xb58b63,roughness:.72,metalness:0});
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),floorMat);
-floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
-
-// Subtle plank joints so the floor reads as premium hardwood at every angle.
-const jointMat=new THREE.LineBasicMaterial({color:0x72563e,transparent:true,opacity:.09});
-for(let x=-ROOM/2+.18;x<ROOM/2;x+=.18){
-  const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.001,-ROOM/2),new THREE.Vector3(x,.001,ROOM/2)]);
-  roomGroup.add(new THREE.Line(g,jointMat));
-}
-
-// Warm greige 9' wall + substantial white baseboard.
-const wallMat=new THREE.MeshStandardMaterial({color:0xe3d9cc,roughness:.94,metalness:0,side:THREE.FrontSide});
-const backWall=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,WALL_H),wallMat);
-backWall.position.set(0,WALL_H/2,-ROOM/2); backWall.receiveShadow=true; roomGroup.add(backWall);
-const baseboardMat=new THREE.MeshStandardMaterial({color:0xf7f4ef,roughness:.76,metalness:0});
-const baseboard=new THREE.Mesh(new THREE.BoxGeometry(ROOM,.16,.045),baseboardMat);
-baseboard.position.set(0,.08,-ROOM/2+.023); baseboard.castShadow=true; roomGroup.add(baseboard);
-
-// Soft studio daylight from the left, inspired by a large luxury-room window.
-const windowLight=new THREE.RectAreaLight(0xffe6c4,5.2,2.2,2.5);
-windowLight.position.set(-ROOM*.38,1.65,ROOM*.12); windowLight.lookAt(0,1.05,-ROOM/2); scene.add(windowLight);
-const sun=new THREE.DirectionalLight(0xffdfb0,2.2); sun.position.set(-4,5,4); sun.castShadow=true;
-sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-5;sun.shadow.camera.right=5;sun.shadow.camera.top=5;sun.shadow.camera.bottom=-5;scene.add(sun);
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),new THREE.ShadowMaterial({color:0x000000,opacity:.14}));
-ground.rotation.x=-Math.PI/2;ground.position.y=.004;ground.receiveShadow=true;scene.add(ground);
-
-// Luxury architectural details: ceiling, black-framed window and recessed warm spots.
-const ceilingMat=new THREE.MeshStandardMaterial({color:0xf2ede6,roughness:.88,metalness:0});
-const ceiling=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),ceilingMat);ceiling.rotation.x=Math.PI/2;ceiling.position.y=WALL_H;roomGroup.add(ceiling);
-const frameMat=new THREE.MeshStandardMaterial({color:0x171717,roughness:.45,metalness:.25});
-const glassMat=new THREE.MeshPhysicalMaterial({color:0x9fb2b3,roughness:.18,metalness:0,transparent:true,opacity:.34});
-const win=new THREE.Group();
-const ww=2.05,wh=2.38,wy=1.30,wz=-ROOM/2+.012;
-const glass=new THREE.Mesh(new THREE.PlaneGeometry(ww,wh),glassMat);glass.position.set(-ROOM*.34,wy,wz);win.add(glass);
-for(const [x,y,w,h] of [[-ROOM*.34-ww/2,wy,.055,wh+.1],[-ROOM*.34+ww/2,wy,.055,wh+.1],[-ROOM*.34,wy+wh/2,ww+.1,.055],[-ROOM*.34,wy-wh/2,ww+.1,.055]]){
- const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,.055),frameMat);q.position.set(x,y,wz+.025);win.add(q);
-}
-roomGroup.add(win);
-for(const x of [-2.2,0,2.2]){const spot=new THREE.SpotLight(0xffdfb8,35,5,Math.PI/7,.55,1.4);spot.position.set(x,WALL_H-.04,-.15);spot.target.position.set(x,0,-ROOM*.28);scene.add(spot,spot.target)}
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05; renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; host.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.06; controls.minPolarAngle=.2; controls.maxPolarAngle=Math.PI/2+.12;
+scene.add(new THREE.HemisphereLight(0xffffff,0x8a8378,2.2));
+const key=new THREE.DirectionalLight(0xffffff,3.5); key.position.set(4,7,5); key.castShadow=true; scene.add(key);
+const fill=new THREE.DirectionalLight(0xfff3e0,1.2); fill.position.set(-5,3,-2); scene.add(fill);
+const ground=new THREE.Mesh(new THREE.CircleGeometry(8,96),new THREE.ShadowMaterial({color:0x000000,opacity:.12})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
 let model,home={position:new THREE.Vector3(),target:new THREE.Vector3()};
 const textureLoader=new THREE.TextureLoader(),textureCache=new Map();
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
-function frame(object){
-  const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z);
-  object.position.sub(center);
-  object.rotation.y=0;
-  let b=new THREE.Box3().setFromObject(object); object.position.y-=b.min.y; b=new THREE.Box3().setFromObject(object);
-
-  // Normalize the showroom from the model's actual height. The visual proportions remain
-  // exactly 25' x 25' x 9', regardless of the unit exported by SolidWorks/Blender.
-  const scalePerFoot=size.y/7.0; // this cabinet is treated as a ~7' tall real furniture piece
-  const room=25*scalePerFoot, wallH=9*scalePerFoot;
-  floor.geometry.dispose(); floor.geometry=new THREE.PlaneGeometry(room,room);
-  ground.geometry.dispose(); ground.geometry=new THREE.PlaneGeometry(room,room);
-  backWall.geometry.dispose(); backWall.geometry=new THREE.PlaneGeometry(room,wallH);
-  backWall.position.set(0,wallH/2,-room/2);
-  baseboard.geometry.dispose(); baseboard.geometry=new THREE.BoxGeometry(room,.16*scalePerFoot,.045*scalePerFoot);
-  baseboard.position.set(0,.08*scalePerFoot,-room/2+.023*scalePerFoot);
-
-  // Remove old plank guide lines; use the clean oak plane for a premium showroom look.
-  roomGroup.children.filter(o=>o.isLine).forEach(o=>o.visible=false);
-
-  // Put the actual rear face of the cabinet against the wall.
-  object.position.z+=(-room/2+.055*scalePerFoot)-b.max.z;
-  b=new THREE.Box3().setFromObject(object); const c=b.getCenter(new THREE.Vector3());
-
-  windowLight.position.set(-room*.38,wallH*.62,c.z+room*.28); windowLight.lookAt(c.x,wallH*.42,-room/2);
-  sun.position.set(-room*.35,wallH*1.6,c.z+room*.4);
-
-  const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
-  camera.near=Math.max(max/1000,.001);camera.far=Math.max(room*5,max*100);camera.updateProjectionMatrix();
-  camera.position.set(c.x+d*.9,size.y*.62,c.z+d*1.6);
-  controls.target.set(c.x,size.y*.43,c.z);
-  controls.minDistance=max*.7;controls.maxDistance=Math.min(max*3.3,room*.7);
-  controls.minAzimuthAngle=-Math.PI*.4;controls.maxAzimuthAngle=Math.PI*.4;
-  controls.update();home={position:camera.position.clone(),target:controls.target.clone()};
-}
+function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z); object.position.sub(center); const box2=new THREE.Box3().setFromObject(object); object.position.y-=box2.min.y; ground.position.y=-.003; const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))); camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
 function getPartMeshes(partIndex,names){if(!model)return[];const all=[];model.traverse(o=>{if(o.isMesh)all.push(o)});const exact=all.filter(o=>names.includes(o.name));return exact.length?exact:(all[partIndex]?[all[partIndex]]:[])}
 function ensureUV(mesh){
   if(mesh.userData.materialUV)return;
