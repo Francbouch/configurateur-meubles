@@ -174,8 +174,6 @@ async function start(){
     await buildMaterialLibrary();
     const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
     model=gltf.scene;
-    model.traverse(o=>{
-      });
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     buildControls();
