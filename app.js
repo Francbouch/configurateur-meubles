@@ -15,7 +15,7 @@ const FT=.3048, ROOM=25*FT, WALL_H=9*FT;
 const roomGroup=new THREE.Group(); scene.add(roomGroup);
 
 // Luxury oak floor — true 25' x 25' footprint.
-const floorMat=new THREE.MeshStandardMaterial({color:0xb88656,roughness:.64,metalness:0});
+const floorMat=new THREE.MeshStandardMaterial({color:0x9f6f43,roughness:.58,metalness:0});
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),floorMat);
 floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
 
@@ -27,7 +27,7 @@ for(let x=-ROOM/2+.18;x<ROOM/2;x+=.18){
 }
 
 // Warm greige 9' wall + substantial white baseboard.
-const wallMat=new THREE.MeshStandardMaterial({color:0xd9cbb9,roughness:.92,metalness:0,side:THREE.FrontSide});
+const wallMat=new THREE.MeshStandardMaterial({color:0xd2c0aa,roughness:.9,metalness:0,side:THREE.FrontSide});
 const backWall=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,WALL_H),wallMat);
 backWall.position.set(0,WALL_H/2,-ROOM/2); backWall.receiveShadow=true; roomGroup.add(backWall);
 const baseboardMat=new THREE.MeshStandardMaterial({color:0xf4f1eb,roughness:.7,metalness:0});
@@ -41,12 +41,28 @@ const sun=new THREE.DirectionalLight(0xffdfb0,2.2); sun.position.set(-4,5,4); su
 sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-5;sun.shadow.camera.right=5;sun.shadow.camera.top=5;sun.shadow.camera.bottom=-5;scene.add(sun);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),new THREE.ShadowMaterial({color:0x000000,opacity:.14}));
 ground.rotation.x=-Math.PI/2;ground.position.y=.004;ground.receiveShadow=true;scene.add(ground);
+
+// Luxury architectural details: ceiling, black-framed window and recessed warm spots.
+const ceilingMat=new THREE.MeshStandardMaterial({color:0xf2ede6,roughness:.88,metalness:0});
+const ceiling=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),ceilingMat);ceiling.rotation.x=Math.PI/2;ceiling.position.y=WALL_H;roomGroup.add(ceiling);
+const frameMat=new THREE.MeshStandardMaterial({color:0x171717,roughness:.45,metalness:.25});
+const glassMat=new THREE.MeshPhysicalMaterial({color:0x9fb2b3,roughness:.18,metalness:0,transparent:true,opacity:.34});
+const win=new THREE.Group();
+const ww=1.65,wh=2.25,wy=1.28,wz=-ROOM/2+.012;
+const glass=new THREE.Mesh(new THREE.PlaneGeometry(ww,wh),glassMat);glass.position.set(-ROOM*.34,wy,wz);win.add(glass);
+for(const [x,y,w,h] of [[-ROOM*.34-ww/2,wy,.055,wh+.1],[-ROOM*.34+ww/2,wy,.055,wh+.1],[-ROOM*.34,wy+wh/2,ww+.1,.055],[-ROOM*.34,wy-wh/2,ww+.1,.055]]){
+ const q=new THREE.Mesh(new THREE.BoxGeometry(w,h,.055),frameMat);q.position.set(x,y,wz+.025);win.add(q);
+}
+roomGroup.add(win);
+for(const x of [-2.2,0,2.2]){const spot=new THREE.SpotLight(0xffdfb8,35,5,Math.PI/7,.55,1.4);spot.position.set(x,WALL_H-.04,-.15);spot.target.position.set(x,0,-ROOM*.28);scene.add(spot,spot.target)}
 let model,home={position:new THREE.Vector3(),target:new THREE.Vector3()};
 const textureLoader=new THREE.TextureLoader(),textureCache=new Map();
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
 function frame(object){
   const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z);
   object.position.sub(center);
+  // SolidWorks model arrives sideways in this viewer: rotate it so the drawer/door facade faces the room.
+  object.rotation.y=Math.PI/2;
   let b=new THREE.Box3().setFromObject(object); object.position.y-=b.min.y; b=new THREE.Box3().setFromObject(object);
 
   // Normalize the showroom from the model's actual height. The visual proportions remain
