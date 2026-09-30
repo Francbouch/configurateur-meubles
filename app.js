@@ -15,8 +15,8 @@ const MATERIALS=[
   {code:"NOIR",name:"Noir",color:0x000000}
 ];
 const PARTS=[
-  {label:"Caisson",mesh:"CAISSON",initial:"580"},
   {label:"Façade",mesh:"FACADE",initial:"831"},
+  {label:"Caisson",mesh:"CAISSON",initial:"831"},
   {label:"Intérieur",mesh:"INTERIEUR",initial:"832"}
 ];
 
@@ -107,6 +107,15 @@ function applyMaterial(meshName,code){
 const selectedCodes=new Map(PARTS.map(part=>[part.mesh,part.initial]));
 let activePart=PARTS[0];
 
+function syncInitialCaisson(){
+  const facadeCode=selectedCodes.get("FACADE");
+  const caissonCode=selectedCodes.get("CAISSON");
+  if(caissonCode!=="NOIR" && caissonCode!=="175" && caissonCode!==facadeCode){
+    selectedCodes.set("CAISSON",facadeCode);
+    applyMaterial("CAISSON",facadeCode);
+  }
+}
+
 function materialPreview(item){
   return item.src
     ? 'background-image:url('+item.src+');background-size:cover;background-position:center;'
@@ -122,12 +131,29 @@ function buildControls(){
   const choicePart=controlsRoot.querySelector(".choice-part");
   const grid=controlsRoot.querySelector(".material-grid");
 
+  function allowedMaterials(part){
+    if(part.mesh!=="CAISSON") return MATERIALS;
+    const facadeCode=selectedCodes.get("FACADE");
+    return MATERIALS.filter(item=>item.code==="NOIR" || item.code==="175" || item.code===facadeCode);
+  }
+
+  function syncCaissonWithFacade(){
+    const allowed=allowedMaterials(PARTS.find(part=>part.mesh==="CAISSON"));
+    const current=selectedCodes.get("CAISSON");
+    if(!allowed.some(item=>item.code===current)){
+      const facadeCode=selectedCodes.get("FACADE");
+      selectedCodes.set("CAISSON",facadeCode);
+      applyMaterial("CAISSON",facadeCode);
+    }
+  }
+
   function renderMaterials(){
     choicePart.textContent=activePart.label;
     grid.innerHTML="";
     const current=selectedCodes.get(activePart.mesh);
+    const available=allowedMaterials(activePart);
 
-    MATERIALS.forEach(item=>{
+    available.forEach(item=>{
       const button=document.createElement("button");
       button.type="button";
       button.className="material-card"+(item.code===current?" active":"");
@@ -135,11 +161,23 @@ function buildControls(){
       button.onclick=()=>{
         selectedCodes.set(activePart.mesh,item.code);
         applyMaterial(activePart.mesh,item.code);
+
+        if(activePart.mesh==="FACADE"){
+          syncCaissonWithFacade();
+        }
+
         renderPartList();
         renderMaterials();
       };
       grid.appendChild(button);
     });
+
+    if(activePart.mesh==="CAISSON"){
+      const hint=document.createElement("p");
+      hint.className="material-hint";
+      hint.textContent="Le caisson suit la couleur de la façade, avec blanc ou noir au choix.";
+      grid.parentElement.appendChild(hint);
+    }
   }
 
   function renderPartList(){
@@ -176,6 +214,7 @@ async function start(){
     model=gltf.scene;
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
+    syncInitialCaisson();
     buildControls();
     frame(model);
     loading.classList.add("hidden");
