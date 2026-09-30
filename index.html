@@ -1,65 +1,39 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#f3f1ec" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f3f1ec">
   <title>Configurateur de meubles</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=blend2-live-1" />
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="./styles.css?v=closed5-clean-1">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#">FB <span>Mobilier</span></a>
     <span class="prototype">Configurateur 3D</span>
   </header>
+
   <main class="app">
     <section class="viewer-card">
       <div id="viewer">
         <div id="loading" class="loading"><span></span><p>Chargement du meuble…</p></div>
-        <div id="empty" class="empty hidden">
-          <strong>Modèle 3D prêt à être branché</strong>
-          <p>Ajoutez l’URL publique du GLB dans <code>config.js</code>.</p>
-        </div>
+        <div id="empty" class="empty hidden"><strong>Impossible de charger le configurateur</strong><p>Rechargez la page.</p></div>
       </div>
       <div class="viewer-tools">
         <button id="resetView" type="button">Vue initiale</button>
         <span>Glisser pour tourner · Molette pour zoomer</span>
       </div>
     </section>
+
     <aside class="panel">
       <p class="eyebrow">Collection</p>
       <h1>Lit cabinet François</h1>
-      <p class="intro">Choisissez indépendamment le matériau du caisson, de la façade et de l’intérieur.</p>
+      <p class="intro">Choisissez le matériau du caisson, de la façade et de l’intérieur.</p>
       <div id="materialControls" class="controls"></div>
-      <p class="note">Les choix sont appliqués directement aux meshes CAISSON, FACADE et INTERIEUR sans modifier leurs UV.</p>
+      <p class="note">Bibliothèque de matériaux issue directement de Lit cabinet closed5.</p>
     </aside>
   </main>
-  <script>
-    window.__CONFIGURATOR_STARTED__ = false;
-    window.setTimeout(() => {
-      if (window.__CONFIGURATOR_STARTED__) return;
-      const loading = document.querySelector("#loading");
-      const empty = document.querySelector("#empty");
-      if (loading) loading.classList.add("hidden");
-      if (empty) {
-        empty.classList.remove("hidden");
-        const title = empty.querySelector("strong");
-        const p = empty.querySelector("p");
-        if (title) title.textContent = "Le moteur 3D n’a pas démarré";
-        if (p) p.textContent = "Rechargez la page. Si le problème persiste, le CDN du moteur 3D est probablement bloqué.";
-      }
-    }, 12000);
-  </script>
-  <script src="./config.js?v=blend2-live-1"></script>
-  <script type="module" src="./app.js?v=blend2-live-1"></script>
+
+  <script type="module" src="./app.js?v=closed5-clean-1"></script>
 </body>
 </html>
