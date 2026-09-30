@@ -105,7 +105,7 @@ function applyMaterial(meshName,code){
 }
 
 const selectedCodes=new Map(PARTS.map(part=>[part.mesh,part.initial]));
-let activePart=PARTS[0];
+let activePart=null;
 
 function syncInitialCaisson(){
   const facadeCode=selectedCodes.get("FACADE");
@@ -132,24 +132,30 @@ function buildControls(){
   const grid=controlsRoot.querySelector(".material-grid");
 
   function allowedMaterials(part){
-    if(part.mesh!=="CAISSON") return MATERIALS;
+    if(part.mesh!=="CAISSON" && part.mesh!=="INTERIEUR") return MATERIALS;
     const facadeCode=selectedCodes.get("FACADE");
     return MATERIALS.filter(item=>item.code==="NOIR" || item.code==="175" || item.code===facadeCode);
   }
 
-  function syncCaissonWithFacade(){
-    const allowed=allowedMaterials(PARTS.find(part=>part.mesh==="CAISSON"));
-    const current=selectedCodes.get("CAISSON");
-    if(!allowed.some(item=>item.code===current)){
-      const facadeCode=selectedCodes.get("FACADE");
-      selectedCodes.set("CAISSON",facadeCode);
-      applyMaterial("CAISSON",facadeCode);
-    }
+  function syncDependentParts(){
+    const facadeCode=selectedCodes.get("FACADE");
+    ["CAISSON","INTERIEUR"].forEach(mesh=>{
+      const current=selectedCodes.get(mesh);
+      if(current!=="NOIR" && current!=="175" && current!==facadeCode){
+        selectedCodes.set(mesh,facadeCode);
+        applyMaterial(mesh,facadeCode);
+      }
+    });
   }
 
   function renderMaterials(){
-    choicePart.textContent=activePart.label;
     grid.innerHTML="";
+    if(!activePart){
+      controlsRoot.classList.remove("is-open");
+      return;
+    }
+    controlsRoot.classList.add("is-open");
+    choicePart.textContent=activePart.label;
     const current=selectedCodes.get(activePart.mesh);
     const available=allowedMaterials(activePart);
 
@@ -161,35 +167,34 @@ function buildControls(){
       button.onclick=()=>{
         selectedCodes.set(activePart.mesh,item.code);
         applyMaterial(activePart.mesh,item.code);
-
-        if(activePart.mesh==="FACADE"){
-          syncCaissonWithFacade();
-        }
-
+        if(activePart.mesh==="FACADE") syncDependentParts();
         renderPartList();
         renderMaterials();
       };
       grid.appendChild(button);
     });
 
-    if(activePart.mesh==="CAISSON"){
+    if(activePart.mesh==="CAISSON" || activePart.mesh==="INTERIEUR"){
       const hint=document.createElement("p");
       hint.className="material-hint";
-      hint.textContent="Le caisson suit la couleur de la façade, avec blanc ou noir au choix.";
+      hint.textContent="Disponible : la finition de la façade, blanc ou noir.";
       grid.parentElement.appendChild(hint);
     }
   }
 
   function renderPartList(){
     partList.innerHTML="";
-    PARTS.forEach(part=>{
+    PARTS.forEach((part,index)=>{
       const current=MATERIALS.find(item=>item.code===selectedCodes.get(part.mesh));
+      const isActive=part.mesh===activePart?.mesh;
       const button=document.createElement("button");
       button.type="button";
-      button.className="part-row"+(part.mesh===activePart.mesh?" active":"");
-      button.innerHTML='<span class="part-name">'+part.label+'</span><span class="part-current"><span class="part-swatch" style="'+materialPreview(current)+'"></span><span>'+current.name+'</span></span><span class="part-arrow">›</span>';
+      button.className="part-row"+(isActive?" active":"");
+      const chosen=isActive || selectedCodes.get(part.mesh)!==part.initial;
+      const status=chosen ? '<span class="part-current">'+current.name+'</span>' : '<span class="part-current muted">Choisir</span>';
+      button.innerHTML='<span class="part-index">0'+(index+1)+'</span><span class="part-main"><span class="part-name">'+part.label+'</span>'+status+'</span><span class="part-arrow">⌄</span>';
       button.onclick=()=>{
-        activePart=part;
+        activePart=isActive ? null : part;
         renderPartList();
         renderMaterials();
       };
@@ -214,7 +219,7 @@ async function start(){
     model=gltf.scene;
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
-    syncInitialCaisson();
+    syncDependentParts();
     buildControls();
     frame(model);
     loading.classList.add("hidden");
