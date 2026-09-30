@@ -32,14 +32,8 @@ const camera=new THREE.PerspectiveCamera(50,1,.01,1000);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1;
+renderer.toneMapping=THREE.NoToneMapping;
 host.appendChild(renderer.domElement);
-
-scene.add(new THREE.HemisphereLight(0xffffff,0x8c8478,1.7));
-const key=new THREE.DirectionalLight(0xffffff,2.1);
-key.position.set(4,7,5);
-scene.add(key);
 
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
@@ -96,11 +90,9 @@ async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-    const material=new THREE.MeshStandardMaterial({
+    const material=new THREE.MeshBasicMaterial({
       color:item.color??0xffffff,
       map,
-      roughness:.5,
-      metalness:0,
       side:THREE.DoubleSide
     });
     material.name=item.code;
