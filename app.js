@@ -1,7 +1,7 @@
-import * as THREE from "https://esm.sh/three@0.180.0";
+import * as THREE from "https://esm.sh/three@0.180.0/webgpu.js";
 import { OrbitControls } from "https://esm.sh/three@0.180.0/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
-import { RoomEnvironment } from "https://esm.sh/three@0.180.0/examples/jsm/environments/RoomEnvironment.js";
+import { RGBELoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/RGBELoader.js";
 
 const MODEL_URL="https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/Lit_cabinet_Fran%C3%A7ois_UV.glb";
 const MATERIALS=[
@@ -28,7 +28,7 @@ const controlsRoot=document.querySelector("#materialControls");
 
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(50,1,.01,1000);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+const renderer=new THREE.WebGPURenderer({antialias:true,alpha:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.AgXToneMapping;
