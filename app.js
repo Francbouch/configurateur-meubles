@@ -13,14 +13,14 @@ const key=new THREE.DirectionalLight(0xffffff,3.5); key.position.set(4,7,5); key
 const fill=new THREE.DirectionalLight(0xfff3e0,1.2); fill.position.set(-5,3,-2); scene.add(fill);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.ShadowMaterial({color:0x000000,opacity:.13})); ground.rotation.x=-Math.PI/2; ground.position.y=.004; ground.receiveShadow=true; scene.add(ground);
 const roomGroup=new THREE.Group(); scene.add(roomGroup);
-const floorMat=new THREE.MeshStandardMaterial({color:0xb99870,roughness:.78,metalness:0});
+const floorMat=new THREE.MeshStandardMaterial({color:0xc9aa82,roughness:.82,metalness:0});
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,14),floorMat); floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
-const wallMat=new THREE.MeshStandardMaterial({color:0xe5ddd1,roughness:.94,metalness:0});
+const wallMat=new THREE.MeshStandardMaterial({color:0xeee8df,roughness:.96,metalness:0});
 const backWall=new THREE.Mesh(new THREE.PlaneGeometry(20,10),wallMat); backWall.receiveShadow=true; roomGroup.add(backWall);
-const sideWall=new THREE.Mesh(new THREE.PlaneGeometry(14,10),wallMat); sideWall.rotation.y=Math.PI/2; sideWall.receiveShadow=true; roomGroup.add(sideWall);
+const sideWall=new THREE.Mesh(new THREE.PlaneGeometry(14,10),wallMat); sideWall.rotation.y=Math.PI/2; sideWall.receiveShadow=true; sideWall.visible=false; roomGroup.add(sideWall);
 const baseboardMat=new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.82,metalness:0});
 const baseboard=new THREE.Mesh(new THREE.BoxGeometry(20,.13,.055),baseboardMat); roomGroup.add(baseboard);
-const sideBaseboard=new THREE.Mesh(new THREE.BoxGeometry(.055,.13,14),baseboardMat); roomGroup.add(sideBaseboard);
+const sideBaseboard=new THREE.Mesh(new THREE.BoxGeometry(.055,.13,14),baseboardMat); sideBaseboard.visible=false; roomGroup.add(sideBaseboard);
 const boardMat=new THREE.LineBasicMaterial({color:0x9f7d59,transparent:true,opacity:.22});
 for(let x=-9.5;x<=9.5;x+=.55){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.001,-7),new THREE.Vector3(x,.001,7)]);roomGroup.add(new THREE.Line(g,boardMat))}
 const roomLight=new THREE.RectAreaLight(0xfff4e6,2.0,4,5); roomLight.position.set(-3,4,3); roomLight.lookAt(0,1.5,0); scene.add(roomLight);
