@@ -1,42 +1,55 @@
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import * as THREE from "https://esm.sh/three@0.180.0";
+import { OrbitControls } from "https://esm.sh/three@0.180.0/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
 
-window.__CONFIGURATOR_STARTED__ = true;
+const MODEL_URL="https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/Lit_cabinet_Fran%C3%A7ois_UV.glb";
+const MATERIALS=[
+  {code:"580",name:"Esprit Libre",src:"./materials/580.png"},
+  {code:"581",name:"Beauté Naturelle",src:"./materials/581.png"},
+  {code:"582",name:"Fashionista",src:"./materials/582.png"},
+  {code:"588",name:"588",src:"./materials/588.png"},
+  {code:"592",name:"592",src:"./materials/592.png"},
+  {code:"831",name:"Roc Solide",src:"./materials/831.png"},
+  {code:"832",name:"832",src:"./materials/832.png"},
+  {code:"175",name:"Blanc",src:"./materials/175.png"},
+  {code:"NOIR",name:"Noir",color:0x000000}
+];
+const PARTS=[
+  {label:"Caisson",mesh:"CAISSON",initial:"580"},
+  {label:"Façade",mesh:"FACADE",initial:"831"},
+  {label:"Intérieur",mesh:"INTERIEUR",initial:"832"}
+];
 
-const cfg=window.FURNITURE_CONFIG;
 const host=document.querySelector("#viewer");
 const loading=document.querySelector("#loading");
 const empty=document.querySelector("#empty");
-const root=document.querySelector("#materialControls");
+const controlsRoot=document.querySelector("#materialControls");
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0xffffff);
+
 const camera=new THREE.PerspectiveCamera(50,1,.01,1000);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1;
 host.appendChild(renderer.domElement);
 
-const controls=new OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true;
-controls.dampingFactor=.06;
-scene.add(new THREE.HemisphereLight(0xffffff,0x8a8378,1.65));
-const key=new THREE.DirectionalLight(0xffffff,2.2);
+scene.add(new THREE.HemisphereLight(0xffffff,0x8c8478,1.7));
+const key=new THREE.DirectionalLight(0xffffff,2.1);
 key.position.set(4,7,5);
 scene.add(key);
 
+const orbit=new OrbitControls(camera,renderer.domElement);
+orbit.enableDamping=true;
+
 let model=null;
 let home={position:new THREE.Vector3(),target:new THREE.Vector3()};
-const originalByMesh=new Map();
-const authoredByCode=new Map();
-const textureCache=new Map();
-const textureLoader=new THREE.TextureLoader();
+const materialLibrary=new Map();
 
 function resize(){
-  const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);
+  const w=Math.max(host.clientWidth,1),h=Math.max(host.clientHeight,1);
   renderer.setSize(w,h,false);
   camera.aspect=w/h;
   camera.updateProjectionMatrix();
@@ -46,167 +59,125 @@ resize();
 
 function frame(object){
   const box=new THREE.Box3().setFromObject(object);
-  if(box.isEmpty())return;
   const size=box.getSize(new THREE.Vector3());
   const center=box.getCenter(new THREE.Vector3());
   const max=Math.max(size.x,size.y,size.z)||1;
-  const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
-  controls.target.copy(center);
+  const distance=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
+  orbit.target.copy(center);
   camera.near=Math.max(max/1000,.001);
   camera.far=max*100;
-  camera.position.set(center.x+d*.85,center.y+d*.55,center.z+d*1.2);
+  camera.position.set(center.x+distance*.85,center.y+distance*.55,center.z+distance*1.2);
   camera.updateProjectionMatrix();
-  controls.minDistance=max*.45;
-  controls.maxDistance=max*4;
-  controls.update();
-  home={position:camera.position.clone(),target:controls.target.clone()};
+  orbit.minDistance=max*.45;
+  orbit.maxDistance=max*4;
+  orbit.update();
+  home={position:camera.position.clone(),target:orbit.target.clone()};
 }
 
-function getMesh(name){return model?model.getObjectByName(name):null}
-
-function loadTexture(url){
-  if(!url)return Promise.resolve(null);
-  if(textureCache.has(url))return textureCache.get(url);
-  const p=new Promise(resolve=>{
-    textureLoader.load(url,t=>{
+function loadTexture(src){
+  return new Promise((resolve,reject)=>{
+    new THREE.TextureLoader().load(src,t=>{
       t.colorSpace=THREE.SRGBColorSpace;
       t.wrapS=THREE.RepeatWrapping;
       t.wrapT=THREE.RepeatWrapping;
+      t.repeat.set(1,1);
+      t.offset.set(0,0);
+      t.center.set(0,0);
+      t.rotation=0;
       t.flipY=false;
       t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
       t.needsUpdate=true;
       resolve(t);
-    },undefined,()=>resolve(null));
+    },undefined,reject);
   });
-  textureCache.set(url,p);
-  return p;
 }
 
-function copyTextureTransform(source,target){
-  if(!source||!target)return;
-  target.wrapS=THREE.RepeatWrapping; target.wrapT=THREE.RepeatWrapping;
-  target.repeat.copy(source.repeat);
-  target.offset.copy(source.offset);
-  target.center.copy(source.center);
-  target.rotation=source.rotation;
-  target.flipY=source.flipY;
-  target.needsUpdate=true;
+async function buildMaterialLibrary(){
+  await Promise.all(MATERIALS.map(async item=>{
+    let map=null;
+    if(item.src) map=await loadTexture(item.src);
+    const material=new THREE.MeshStandardMaterial({
+      color:item.color??0xffffff,
+      map,
+      roughness:.5,
+      metalness:0,
+      side:THREE.DoubleSide
+    });
+    material.name=item.code;
+    materialLibrary.set(item.code,material);
+  }));
 }
 
-async function applyMaterial(part,mat){
-  const mesh=getMesh(part.meshName);
-  if(!mesh)return;
-
-  if(mat.authored && authoredByCode.has(mat.code)){
-    mesh.material=authoredByCode.get(mat.code).clone();
-    if(mesh.material.map)mesh.material.map=mesh.material.map.clone();
-    mesh.material.needsUpdate=true;
-    return;
-  }
-
-  const original=originalByMesh.get(part.meshName)||mesh.material;
-  const next=original.clone();
-  const tex=await loadTexture(mat.textureUrl);
-
-  next.color.set(tex?0xffffff:mat.hex);
-  if(tex){
-    const mapped=tex.clone();
-    const reference=original.map || authoredByCode.get("582")?.map || authoredByCode.get("592")?.map;
-    copyTextureTransform(reference,mapped);
-    mapped.wrapS=THREE.RepeatWrapping;
-    mapped.wrapT=THREE.RepeatWrapping;
-    mapped.flipY=false;
-    mapped.needsUpdate=true;
-    next.map=mapped;
-  }else{
-    next.map=null;
-  }
-  next.metalness=0;
-  next.roughness=.68;
-  next.needsUpdate=true;
-  mesh.material=next;
+function applyMaterial(meshName,code){
+  const mesh=model?.getObjectByName(meshName);
+  const material=materialLibrary.get(code);
+  if(!mesh||!material)return;
+  mesh.material=material.clone();
+  if(mesh.material.map)mesh.material.map=mesh.material.map.clone();
+  mesh.material.needsUpdate=true;
 }
 
 function buildControls(){
-  root.innerHTML="";
-  cfg.parts.forEach(part=>{
-    const wrap=document.createElement("section");
-    wrap.className="control";
-    wrap.innerHTML='<div class="control-head"><div><span class="step">Matériau</span><strong>'+part.label+'</strong></div><span class="selected"></span></div><div class="material-grid"></div>';
-    const selected=wrap.querySelector(".selected");
-    const grid=wrap.querySelector(".material-grid");
+  controlsRoot.innerHTML="";
+  PARTS.forEach(part=>{
+    const section=document.createElement("section");
+    section.className="control";
+    section.innerHTML='<div class="control-head"><div><span class="step">Matériau</span><strong>'+part.label+'</strong></div><span class="selected"></span></div><div class="material-grid"></div>';
+    const grid=section.querySelector(".material-grid");
+    const selected=section.querySelector(".selected");
 
-    cfg.materials.forEach(mat=>{
-      const active=mat.code===part.initialCode;
+    MATERIALS.forEach(item=>{
       const button=document.createElement("button");
       button.type="button";
-      button.className="material-card"+(active?" active":"");
-      const preview=mat.textureUrl
-        ? 'background-image:url(&quot;'+mat.textureUrl+'&quot;);background-size:cover;background-position:center;'
-        : 'background:'+mat.hex+';';
-      button.innerHTML='<span class="material-sample" style="'+preview+'"></span><span class="material-meta"><strong>'+mat.name+'</strong><small>'+mat.code+'</small></span>';
-      if(active)selected.textContent=mat.name;
+      button.className="material-card"+(item.code===part.initial?" active":"");
+      const preview=item.src
+        ? 'background-image:url('+item.src+');background-size:cover;background-position:center;'
+        : 'background:#000;';
+      button.innerHTML='<span class="material-sample" style="'+preview+'"></span><span class="material-meta"><strong>'+item.name+'</strong><small>'+item.code+'</small></span>';
+      if(item.code===part.initial)selected.textContent=item.name;
 
-      button.addEventListener("click",async()=>{
-        if(!model)return;
+      button.onclick=()=>{
         grid.querySelectorAll(".material-card").forEach(x=>x.classList.remove("active"));
         button.classList.add("active");
-        selected.textContent=mat.name;
-        await applyMaterial(part,mat);
-      });
+        selected.textContent=item.name;
+        applyMaterial(part.mesh,item.code);
+      };
       grid.appendChild(button);
     });
-    root.appendChild(wrap);
+    controlsRoot.appendChild(section);
   });
 }
-buildControls();
 
-document.querySelector("#resetView").addEventListener("click",()=>{
+document.querySelector("#resetView").onclick=()=>{
   camera.position.copy(home.position);
-  controls.target.copy(home.target);
-  controls.update();
-});
+  orbit.target.copy(home.target);
+  orbit.update();
+};
 
-new GLTFLoader().load(cfg.modelUrl,g=>{
-  model=g.scene;
-  ["CAISSON","FACADE","INTERIEUR"].forEach(name=>{
-    const mesh=getMesh(name);
-    if(mesh&&mesh.isMesh)originalByMesh.set(name,mesh.material.clone());
-  });
-
-  const caisson=originalByMesh.get("CAISSON");
-  const interieur=originalByMesh.get("INTERIEUR");
-  if(caisson)authoredByCode.set("582",caisson.clone());
-  if(interieur)authoredByCode.set("592",interieur.clone());
-
-  model.traverse(o=>{
-    if(o.isMesh&&o.material){
-      if(o.material.map){
-        o.material.map.colorSpace=THREE.SRGBColorSpace;
-        o.material.map.needsUpdate=true;
+async function start(){
+  try{
+    await buildMaterialLibrary();
+    const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
+    model=gltf.scene;
+    model.traverse(o=>{
+      if(o.isMesh){
+        o.castShadow=true;
+        o.receiveShadow=true;
       }
-      o.material.needsUpdate=true;
-    }
-  });
-
-  scene.add(model);
-  frame(model);
-  loading.classList.add("hidden");
-},xhr=>{
-  const p=loading?.querySelector("p");
-  if(p && xhr.lengthComputable && xhr.total>0){
-    const percent=Math.max(1,Math.min(99,Math.round((xhr.loaded/xhr.total)*100)));
-    p.textContent="Chargement du meuble… "+percent+" %";
+    });
+    scene.add(model);
+    PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
+    buildControls();
+    frame(model);
+    loading.classList.add("hidden");
+  }catch(error){
+    console.error(error);
+    loading.classList.add("hidden");
+    empty.classList.remove("hidden");
+    empty.querySelector("strong").textContent="Impossible de charger le configurateur";
+    empty.querySelector("p").textContent="Rechargez la page.";
   }
-},error=>{
-  console.error(error);
-  loading.classList.add("hidden");
-  empty.classList.remove("hidden");
-  empty.querySelector("strong").textContent="Impossible de charger le meuble";
-  empty.querySelector("p").textContent="Le modèle 3D n’a pas pu être chargé. Rechargez la page.";
-});
+}
 
-renderer.setAnimationLoop(()=>{
-  controls.update();
-  renderer.render(scene,camera);
-});
+start();
+renderer.setAnimationLoop(()=>{orbit.update();renderer.render(scene,camera)});
