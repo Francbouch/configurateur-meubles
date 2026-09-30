@@ -6,7 +6,15 @@
   <meta name="theme-color" content="#f3f1ec" />
   <title>Configurateur de meubles</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="stylesheet" href="./styles.css?v=stable-lit-2" />
+  <link rel="stylesheet" href="./styles.css?v=stable-lit-3" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
   <header class="topbar">
@@ -35,7 +43,23 @@
       <p class="note">Les choix sont appliqués directement aux meshes CAISSON, FACADE et INTERIEUR sans modifier leurs UV.</p>
     </aside>
   </main>
-  <script src="./config.js?v=stable-lit-2"></script>
-  <script type="module" src="./app.js?v=stable-lit-2"></script>
+  <script>
+    window.__CONFIGURATOR_STARTED__ = false;
+    window.setTimeout(() => {
+      if (window.__CONFIGURATOR_STARTED__) return;
+      const loading = document.querySelector("#loading");
+      const empty = document.querySelector("#empty");
+      if (loading) loading.classList.add("hidden");
+      if (empty) {
+        empty.classList.remove("hidden");
+        const title = empty.querySelector("strong");
+        const p = empty.querySelector("p");
+        if (title) title.textContent = "Le moteur 3D n’a pas démarré";
+        if (p) p.textContent = "Rechargez la page. Si le problème persiste, le CDN du moteur 3D est probablement bloqué.";
+      }
+    }, 12000);
+  </script>
+  <script src="./config.js?v=stable-lit-3"></script>
+  <script type="module" src="./app.js?v=stable-lit-3"></script>
 </body>
 </html>
