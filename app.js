@@ -7,7 +7,7 @@ const host=document.querySelector("#viewer"),loading=document.querySelector("#lo
 const scene=new THREE.Scene(); scene.background=new THREE.Color(0xe9e6df);
 const camera=new THREE.PerspectiveCamera(35,1,.01,1000);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05; renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; host.appendChild(renderer.domElement);
-const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.06; controls.minPolarAngle=.2; controls.maxPolarAngle=Math.PI/2+.12;
+const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.06; controls.minPolarAngle=.2; controls.maxPolarAngle=Math.PI/2+.08; controls.minAzimuthAngle=-Math.PI*.48; controls.maxAzimuthAngle=Math.PI*.48;
 scene.add(new THREE.HemisphereLight(0xffffff,0x8a8378,2.2));
 const key=new THREE.DirectionalLight(0xffffff,3.5); key.position.set(4,7,5); key.castShadow=true; scene.add(key);
 const fill=new THREE.DirectionalLight(0xfff3e0,1.2); fill.position.set(-5,3,-2); scene.add(fill);
@@ -15,14 +15,13 @@ const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.ShadowMater
 const roomGroup=new THREE.Group(); scene.add(roomGroup);
 const floorMat=new THREE.MeshStandardMaterial({color:0xc9aa82,roughness:.82,metalness:0});
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,14),floorMat); floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
-const wallMat=new THREE.MeshStandardMaterial({color:0xeee8df,roughness:.96,metalness:0});
-const backWall=new THREE.Mesh(new THREE.PlaneGeometry(20,10),wallMat); backWall.receiveShadow=true; roomGroup.add(backWall);
+const wallMat=new THREE.MeshStandardMaterial({color:0xeee8df,roughness:.96,metalness:0,side:THREE.FrontSide});
+const backWall=new THREE.Mesh(new THREE.PlaneGeometry(20,10),wallMat); backWall.receiveShadow=true; backWall.renderOrder=-2; roomGroup.add(backWall);
 const sideWall=new THREE.Mesh(new THREE.PlaneGeometry(14,10),wallMat); sideWall.rotation.y=Math.PI/2; sideWall.receiveShadow=true; sideWall.visible=false; roomGroup.add(sideWall);
 const baseboardMat=new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.82,metalness:0});
 const baseboard=new THREE.Mesh(new THREE.BoxGeometry(20,.13,.055),baseboardMat); roomGroup.add(baseboard);
 const sideBaseboard=new THREE.Mesh(new THREE.BoxGeometry(.055,.13,14),baseboardMat); sideBaseboard.visible=false; roomGroup.add(sideBaseboard);
-const boardMat=new THREE.LineBasicMaterial({color:0x9f7d59,transparent:true,opacity:.22});
-for(let x=-9.5;x<=9.5;x+=.55){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.001,-7),new THREE.Vector3(x,.001,7)]);roomGroup.add(new THREE.Line(g,boardMat))}
+const boardMat=new THREE.LineBasicMaterial({transparent:true,opacity:0});
 const roomLight=new THREE.RectAreaLight(0xfff4e6,2.0,4,5); roomLight.position.set(-3,4,3); roomLight.lookAt(0,1.5,0); scene.add(roomLight);
 let model,home={position:new THREE.Vector3(),target:new THREE.Vector3()};
 const textureLoader=new THREE.TextureLoader(),textureCache=new Map();
