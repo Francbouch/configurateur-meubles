@@ -70,6 +70,9 @@ function loadTexture(url){
   const p=new Promise(resolve=>{
     textureLoader.load(url,t=>{
       t.colorSpace=THREE.SRGBColorSpace;
+      t.wrapS=THREE.RepeatWrapping;
+      t.wrapT=THREE.RepeatWrapping;
+      t.flipY=false;
       t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
       t.needsUpdate=true;
       resolve(t);
@@ -81,7 +84,7 @@ function loadTexture(url){
 
 function copyTextureTransform(source,target){
   if(!source||!target)return;
-  target.wrapS=source.wrapS; target.wrapT=source.wrapT;
+  target.wrapS=THREE.RepeatWrapping; target.wrapT=THREE.RepeatWrapping;
   target.repeat.copy(source.repeat);
   target.offset.copy(source.offset);
   target.center.copy(source.center);
@@ -110,6 +113,10 @@ async function applyMaterial(part,mat){
     const mapped=tex.clone();
     const reference=original.map || authoredByCode.get("582")?.map || authoredByCode.get("592")?.map;
     copyTextureTransform(reference,mapped);
+    mapped.wrapS=THREE.RepeatWrapping;
+    mapped.wrapT=THREE.RepeatWrapping;
+    mapped.flipY=false;
+    mapped.needsUpdate=true;
     next.map=mapped;
   }else{
     next.map=null;
