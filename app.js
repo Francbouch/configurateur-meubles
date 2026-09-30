@@ -74,10 +74,6 @@ function loadTexture(src){
       t.colorSpace=THREE.SRGBColorSpace;
       t.wrapS=THREE.RepeatWrapping;
       t.wrapT=THREE.RepeatWrapping;
-      t.repeat.set(1,1);
-      t.offset.set(0,0);
-      t.center.set(0,0);
-      t.rotation=0;
       t.flipY=false;
       t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
       t.needsUpdate=true;
@@ -105,7 +101,6 @@ function applyMaterial(meshName,code){
   const material=materialLibrary.get(code);
   if(!mesh||!material)return;
   mesh.material=material.clone();
-  if(mesh.material.map)mesh.material.map=mesh.material.map.clone();
   mesh.material.needsUpdate=true;
 }
 
@@ -152,11 +147,7 @@ async function start(){
     const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
     model=gltf.scene;
     model.traverse(o=>{
-      if(o.isMesh){
-        o.castShadow=true;
-        o.receiveShadow=true;
-      }
-    });
+      });
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     buildControls();
