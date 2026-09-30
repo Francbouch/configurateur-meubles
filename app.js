@@ -1,6 +1,8 @@
-import * as THREE from "https://esm.sh/three@0.180.0";
-import { OrbitControls } from "https://esm.sh/three@0.180.0/examples/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+window.__CONFIGURATOR_STARTED__ = true;
 
 const cfg=window.FURNITURE_CONFIG;
 const host=document.querySelector("#viewer");
@@ -183,7 +185,13 @@ new GLTFLoader().load(cfg.modelUrl,g=>{
   scene.add(model);
   frame(model);
   loading.classList.add("hidden");
-},undefined,error=>{
+},xhr=>{
+  const p=loading?.querySelector("p");
+  if(p && xhr.lengthComputable && xhr.total>0){
+    const percent=Math.max(1,Math.min(99,Math.round((xhr.loaded/xhr.total)*100)));
+    p.textContent="Chargement du meuble… "+percent+" %";
+  }
+},error=>{
   console.error(error);
   loading.classList.add("hidden");
   empty.classList.remove("hidden");
