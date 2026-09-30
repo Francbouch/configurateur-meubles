@@ -11,22 +11,57 @@ const controls=new OrbitControls(camera,renderer.domElement); controls.enableDam
 scene.add(new THREE.HemisphereLight(0xffffff,0x8a8378,2.2));
 const key=new THREE.DirectionalLight(0xffffff,3.5); key.position.set(4,7,5); key.castShadow=true; scene.add(key);
 const fill=new THREE.DirectionalLight(0xfff3e0,1.2); fill.position.set(-5,3,-2); scene.add(fill);
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.ShadowMaterial({color:0x000000,opacity:.13})); ground.rotation.x=-Math.PI/2; ground.position.y=.004; ground.receiveShadow=true; scene.add(ground);
+const FT=.3048, ROOM=25*FT, WALL_H=9*FT;
 const roomGroup=new THREE.Group(); scene.add(roomGroup);
-const floorMat=new THREE.MeshStandardMaterial({color:0xb9956d,roughness:.84,metalness:0});
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,14),floorMat); floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
-const wallMat=new THREE.MeshStandardMaterial({color:0xe8dfd2,roughness:.96,metalness:0,side:THREE.FrontSide});
-const backWall=new THREE.Mesh(new THREE.PlaneGeometry(20,10),wallMat); backWall.receiveShadow=true; backWall.renderOrder=-2; roomGroup.add(backWall);
-const sideWall=new THREE.Mesh(new THREE.PlaneGeometry(14,10),wallMat); sideWall.rotation.y=Math.PI/2; sideWall.receiveShadow=true; sideWall.visible=false; roomGroup.add(sideWall);
-const baseboardMat=new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.82,metalness:0});
-const baseboard=new THREE.Mesh(new THREE.BoxGeometry(20,.13,.055),baseboardMat); roomGroup.add(baseboard);
-const sideBaseboard=new THREE.Mesh(new THREE.BoxGeometry(.055,.13,14),baseboardMat); sideBaseboard.visible=false; roomGroup.add(sideBaseboard);
-const boardMat=new THREE.LineBasicMaterial({transparent:true,opacity:0});
-const roomLight=new THREE.RectAreaLight(0xfff4e6,2.0,4,5); roomLight.position.set(-3,4,3); roomLight.lookAt(0,1.5,0); scene.add(roomLight);
+
+// Luxury oak floor — true 25' x 25' footprint.
+const floorMat=new THREE.MeshStandardMaterial({color:0xb88656,roughness:.64,metalness:0});
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),floorMat);
+floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
+
+// Subtle plank joints so the floor reads as premium hardwood at every angle.
+const jointMat=new THREE.LineBasicMaterial({color:0x6f4c30,transparent:true,opacity:.16});
+for(let x=-ROOM/2+.18;x<ROOM/2;x+=.18){
+  const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.001,-ROOM/2),new THREE.Vector3(x,.001,ROOM/2)]);
+  roomGroup.add(new THREE.Line(g,jointMat));
+}
+
+// Warm greige 9' wall + substantial white baseboard.
+const wallMat=new THREE.MeshStandardMaterial({color:0xd9cbb9,roughness:.92,metalness:0,side:THREE.FrontSide});
+const backWall=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,WALL_H),wallMat);
+backWall.position.set(0,WALL_H/2,-ROOM/2); backWall.receiveShadow=true; roomGroup.add(backWall);
+const baseboardMat=new THREE.MeshStandardMaterial({color:0xf4f1eb,roughness:.7,metalness:0});
+const baseboard=new THREE.Mesh(new THREE.BoxGeometry(ROOM,.16,.045),baseboardMat);
+baseboard.position.set(0,.08,-ROOM/2+.023); baseboard.castShadow=true; roomGroup.add(baseboard);
+
+// Soft studio daylight from the left, inspired by a large luxury-room window.
+const windowLight=new THREE.RectAreaLight(0xffe6c4,5.2,2.2,2.5);
+windowLight.position.set(-ROOM*.38,1.65,ROOM*.12); windowLight.lookAt(0,1.05,-ROOM/2); scene.add(windowLight);
+const sun=new THREE.DirectionalLight(0xffdfb0,2.2); sun.position.set(-4,5,4); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-5;sun.shadow.camera.right=5;sun.shadow.camera.top=5;sun.shadow.camera.bottom=-5;scene.add(sun);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(ROOM,ROOM),new THREE.ShadowMaterial({color:0x000000,opacity:.14}));
+ground.rotation.x=-Math.PI/2;ground.position.y=.004;ground.receiveShadow=true;scene.add(ground);
 let model,home={position:new THREE.Vector3(),target:new THREE.Vector3()};
 const textureLoader=new THREE.TextureLoader(),textureCache=new Map();
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
-function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z); object.position.sub(center); const box2=new THREE.Box3().setFromObject(object); object.position.y-=box2.min.y; ground.position.y=.004; const roomH=Math.max(size.y*1.65,3.8),backZ=-(Math.max(size.z*.72,.62)),sideX=-10; backWall.scale.set(1,roomH/10,1);backWall.position.set(0,roomH/2,backZ);sideWall.position.set(sideX,roomH/2,0);baseboard.position.set(0,.065,backZ+.035);sideBaseboard.position.set(sideX,.065,0); const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))); camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.88,d*.68,d*1.38);controls.target.set(0,size.y*.38,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
+function frame(object){
+  const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z);
+  object.position.sub(center);
+  let b=new THREE.Box3().setFromObject(object);
+  object.position.y-=b.min.y;
+  b=new THREE.Box3().setFromObject(object);
+  // Flush the furniture's rear face to the 25' room's rear wall.
+  object.position.z+=(-ROOM/2+.055)-b.min.z;
+  b=new THREE.Box3().setFromObject(object);
+  const c=b.getCenter(new THREE.Vector3());
+  const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
+  camera.near=Math.max(max/1000,.001); camera.far=100; camera.updateProjectionMatrix();
+  camera.position.set(c.x+d*.92,size.y*.58,c.z+d*1.55);
+  controls.target.set(c.x,size.y*.43,c.z);
+  controls.minDistance=max*.7; controls.maxDistance=Math.min(max*3.2,ROOM*.72);
+  controls.minAzimuthAngle=-Math.PI*.42; controls.maxAzimuthAngle=Math.PI*.42;
+  controls.update(); home={position:camera.position.clone(),target:controls.target.clone()};
+}
 function getPartMeshes(partIndex,names){if(!model)return[];const all=[];model.traverse(o=>{if(o.isMesh)all.push(o)});const exact=all.filter(o=>names.includes(o.name));return exact.length?exact:(all[partIndex]?[all[partIndex]]:[])}
 function ensureUV(mesh){
   if(mesh.userData.materialUV)return;
