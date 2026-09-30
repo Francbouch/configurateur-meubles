@@ -134,21 +134,40 @@ function buildControls(){
   const grid=controlsRoot.querySelector(".material-grid");
 
   function allowedMaterials(part){
-    if(part.mesh!=="CAISSON" && part.mesh!=="INTERIEUR") return MATERIALS;
-    const facadeCode=selectedCodes.get("FACADE");
-    if(facadeCode==="NOIR" || facadeCode==="175") return MATERIALS;
-    return MATERIALS.filter(item=>item.code==="NOIR" || item.code==="175" || item.code===facadeCode);
+    if(part.mesh==="FACADE") return MATERIALS;
+
+    const blackOrWhite=new Set(["NOIR","175"]);
+    if(part.mesh==="CAISSON"){
+      const facadeCode=selectedCodes.get("FACADE");
+      if(blackOrWhite.has(facadeCode)) return MATERIALS;
+      return MATERIALS.filter(item=>blackOrWhite.has(item.code) || item.code===facadeCode);
+    }
+
+    if(part.mesh==="INTERIEUR"){
+      const caissonCode=selectedCodes.get("CAISSON");
+      return MATERIALS.filter(item=>blackOrWhite.has(item.code) || item.code===caissonCode);
+    }
+
+    return MATERIALS;
   }
 
   function syncDependentParts(){
+    const blackOrWhite=new Set(["NOIR","175"]);
     const facadeCode=selectedCodes.get("FACADE");
-    ["CAISSON","INTERIEUR"].forEach(mesh=>{
-      const current=selectedCodes.get(mesh);
-      if(current!=="NOIR" && current!=="175" && current!==facadeCode){
-        selectedCodes.set(mesh,facadeCode);
-        applyMaterial(mesh,facadeCode);
-      }
-    });
+    const caisson=selectedCodes.get("CAISSON");
+
+    const allowedCaisson=allowedMaterials(PARTS.find(part=>part.mesh==="CAISSON"));
+    if(!allowedCaisson.some(item=>item.code===caisson)){
+      selectedCodes.set("CAISSON",facadeCode);
+      applyMaterial("CAISSON",facadeCode);
+    }
+
+    const finalCaisson=selectedCodes.get("CAISSON");
+    const interior=selectedCodes.get("INTERIEUR");
+    if(!blackOrWhite.has(interior) && interior!==finalCaisson){
+      selectedCodes.set("INTERIEUR",finalCaisson);
+      applyMaterial("INTERIEUR",finalCaisson);
+    }
   }
 
   function renderMaterials(){
@@ -170,7 +189,7 @@ function buildControls(){
       button.onclick=()=>{
         selectedCodes.set(activePart.mesh,item.code);
         applyMaterial(activePart.mesh,item.code);
-        if(activePart.mesh==="FACADE") syncDependentParts();
+        if(activePart.mesh==="FACADE" || activePart.mesh==="CAISSON") syncDependentParts();
         renderPartList();
         renderMaterials();
       };
@@ -180,9 +199,11 @@ function buildControls(){
     if(activePart.mesh==="CAISSON" || activePart.mesh==="INTERIEUR"){
       const hint=document.createElement("p");
       hint.className="material-hint";
-      hint.textContent=(selectedCodes.get("FACADE")==="NOIR" || selectedCodes.get("FACADE")==="175")
-        ? "Façade blanche ou noire : toutes les finitions sont disponibles."
-        : "Disponible : la finition de la façade, blanc ou noir.";
+      hint.textContent=activePart.mesh==="INTERIEUR"
+        ? "Disponible : la finition du caisson, blanc ou noir."
+        : (selectedCodes.get("FACADE")==="NOIR" || selectedCodes.get("FACADE")==="175")
+          ? "Façade blanche ou noire : toutes les finitions sont disponibles."
+          : "Disponible : la finition de la façade, blanc ou noir.";
       grid.parentElement.appendChild(hint);
     }
   }
