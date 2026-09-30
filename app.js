@@ -11,20 +11,23 @@ const controls=new OrbitControls(camera,renderer.domElement); controls.enableDam
 scene.add(new THREE.HemisphereLight(0xffffff,0x8a8378,2.2));
 const key=new THREE.DirectionalLight(0xffffff,3.5); key.position.set(4,7,5); key.castShadow=true; scene.add(key);
 const fill=new THREE.DirectionalLight(0xfff3e0,1.2); fill.position.set(-5,3,-2); scene.add(fill);
-const ground=new THREE.Mesh(new THREE.CircleGeometry(8,96),new THREE.ShadowMaterial({color:0x000000,opacity:.12})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.ShadowMaterial({color:0x000000,opacity:.13})); ground.rotation.x=-Math.PI/2; ground.position.y=.004; ground.receiveShadow=true; scene.add(ground);
 const roomGroup=new THREE.Group(); scene.add(roomGroup);
-const floorMat=new THREE.MeshStandardMaterial({color:0xc9aa82,roughness:.82,metalness:0});
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(12,10),floorMat);floor.rotation.x=-Math.PI/2;floor.position.set(0,-.006,0);floor.receiveShadow=true;roomGroup.add(floor);
-const wallMat=new THREE.MeshStandardMaterial({color:0xe8e1d7,roughness:.96,metalness:0});
-const backWall=new THREE.Mesh(new THREE.PlaneGeometry(12,7),wallMat);backWall.position.set(0,3.5,-2.15);backWall.receiveShadow=true;roomGroup.add(backWall);
-const sideWall=new THREE.Mesh(new THREE.PlaneGeometry(7,7),wallMat);sideWall.rotation.y=Math.PI/2;sideWall.position.set(-3.6,3.5,.8);sideWall.receiveShadow=true;roomGroup.add(sideWall);
-const baseboardMat=new THREE.MeshStandardMaterial({color:0xf4f1eb,roughness:.8});
-const baseboard=new THREE.Mesh(new THREE.BoxGeometry(12,.11,.05),baseboardMat);baseboard.position.set(0,.055,-2.11);roomGroup.add(baseboard);
-const roomLight=new THREE.RectAreaLight(0xfff4e6,2.4,4,5);roomLight.position.set(-2.8,3.8,2.2);roomLight.lookAt(0,1.8,0);scene.add(roomLight);
+const floorMat=new THREE.MeshStandardMaterial({color:0xb99870,roughness:.78,metalness:0});
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,14),floorMat); floor.rotation.x=-Math.PI/2; floor.position.y=-.012; floor.receiveShadow=true; roomGroup.add(floor);
+const wallMat=new THREE.MeshStandardMaterial({color:0xe5ddd1,roughness:.94,metalness:0});
+const backWall=new THREE.Mesh(new THREE.PlaneGeometry(20,10),wallMat); backWall.receiveShadow=true; roomGroup.add(backWall);
+const sideWall=new THREE.Mesh(new THREE.PlaneGeometry(14,10),wallMat); sideWall.rotation.y=Math.PI/2; sideWall.receiveShadow=true; roomGroup.add(sideWall);
+const baseboardMat=new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.82,metalness:0});
+const baseboard=new THREE.Mesh(new THREE.BoxGeometry(20,.13,.055),baseboardMat); roomGroup.add(baseboard);
+const sideBaseboard=new THREE.Mesh(new THREE.BoxGeometry(.055,.13,14),baseboardMat); roomGroup.add(sideBaseboard);
+const boardMat=new THREE.LineBasicMaterial({color:0x9f7d59,transparent:true,opacity:.22});
+for(let x=-9.5;x<=9.5;x+=.55){const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,.001,-7),new THREE.Vector3(x,.001,7)]);roomGroup.add(new THREE.Line(g,boardMat))}
+const roomLight=new THREE.RectAreaLight(0xfff4e6,2.0,4,5); roomLight.position.set(-3,4,3); roomLight.lookAt(0,1.5,0); scene.add(roomLight);
 let model,home={position:new THREE.Vector3(),target:new THREE.Vector3()};
 const textureLoader=new THREE.TextureLoader(),textureCache=new Map();
 function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()} new ResizeObserver(resize).observe(host);
-function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z); object.position.sub(center); const box2=new THREE.Box3().setFromObject(object); object.position.y-=box2.min.y; ground.position.y=-.003; backWall.position.z=-(Math.max(size.z*2.2,1.8)); sideWall.position.x=-(Math.max(size.x*2.4,2.8)); const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))); camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
+function frame(object){const box=new THREE.Box3().setFromObject(object),size=box.getSize(new THREE.Vector3()),center=box.getCenter(new THREE.Vector3()),max=Math.max(size.x,size.y,size.z); object.position.sub(center); const box2=new THREE.Box3().setFromObject(object); object.position.y-=box2.min.y; ground.position.y=.004; const roomH=Math.max(size.y*2.4,4.8),backZ=-(Math.max(size.z*2.5,2.2)),sideX=-(Math.max(size.x*3.2,3.2)); backWall.scale.y=roomH/10;backWall.position.set(0,roomH/2,backZ);sideWall.scale.y=roomH/10;sideWall.position.set(sideX,roomH/2,0);baseboard.position.set(0,.065,backZ+.03);sideBaseboard.position.set(sideX+.03,.065,0); const d=max/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))); camera.near=Math.max(max/1000,.001);camera.far=max*100;camera.updateProjectionMatrix();camera.position.set(d*.8,d*.55,d*1.15);controls.target.set(0,size.y*.42,0);controls.minDistance=max*.55;controls.maxDistance=max*4;controls.update();home={position:camera.position.clone(),target:controls.target.clone()}}
 function getPartMeshes(partIndex,names){if(!model)return[];const all=[];model.traverse(o=>{if(o.isMesh)all.push(o)});const exact=all.filter(o=>names.includes(o.name));return exact.length?exact:(all[partIndex]?[all[partIndex]]:[])}
 function ensureUV(mesh){
   if(mesh.userData.materialUV)return;
