@@ -40,14 +40,12 @@ host.appendChild(renderer.domElement);
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
 
-// Éclairage uniquement repris du JSON Three.js Editor fourni.
-// Aucun changement au meuble, aux matériaux, aux UV ou à la logique du configurateur.
 function addImportedLighting(){
+  // Exact light rig from the supplied project JSON.
   const key=new THREE.DirectionalLight(0xfffbd5,10.8);
   key.position.set(4.967110979623884,7.685286298271706,3.1827224156795624);
-  key.target.position.set(0,0,0);
   key.castShadow=true;
-  key.shadow.bias=0.00005;
+  key.shadow.bias=.00005;
   key.shadow.radius=3.16;
   key.shadow.mapSize.set(512,512);
   key.shadow.camera.left=-5;
@@ -56,24 +54,26 @@ function addImportedLighting(){
   key.shadow.camera.bottom=-5;
   key.shadow.camera.near=.5;
   key.shadow.camera.far=500;
-  scene.add(key,key.target);
+  const keyTarget=new THREE.Object3D();
+  scene.add(keyTarget);
+  key.target=keyTarget;
+  scene.add(key);
 
-  const pointA=new THREE.PointLight(0xffffff,43.52,32.6,5.8);
-  pointA.position.set(1.8278270109593606,1.32400434818762,.9686382698051315);
-  pointA.castShadow=true;
-  pointA.shadow.mapSize.set(512,512);
-  pointA.shadow.camera.near=.5;
-  pointA.shadow.camera.far=32.6;
-  scene.add(pointA);
+  const pointFront=new THREE.PointLight(0xffffff,43.52,32.6,5.8);
+  pointFront.position.set(1.8278270109593606,1.32400434818762,.9686382698051315);
+  pointFront.castShadow=true;
+  pointFront.shadow.mapSize.set(512,512);
+  pointFront.shadow.camera.near=.5;
+  pointFront.shadow.camera.far=32.6;
+  scene.add(pointFront);
 
-  const pointB=new THREE.PointLight(0xffffff,15.44,50,.32);
-  pointB.position.set(.46218997112339477,3.6515353563731474,1.101424185841721);
-  pointB.castShadow=false;
-  scene.add(pointB);
+  const pointTop=new THREE.PointLight(0xffffff,15.44,50,.32);
+  pointTop.position.set(.46218997112339477,3.6515353563731474,1.101424185841721);
+  pointTop.castShadow=false;
+  scene.add(pointTop);
 
   const rim=new THREE.DirectionalLight(0xffffff,-.54);
   rim.position.set(5,1.776573535312534,-.10974806268320147);
-  rim.target.position.set(0,0,0);
   rim.castShadow=true;
   rim.shadow.mapSize.set(512,512);
   rim.shadow.camera.left=-5;
@@ -82,7 +82,10 @@ function addImportedLighting(){
   rim.shadow.camera.bottom=-5;
   rim.shadow.camera.near=.5;
   rim.shadow.camera.far=500;
-  scene.add(rim,rim.target);
+  const rimTarget=new THREE.Object3D();
+  scene.add(rimTarget);
+  rim.target=rimTarget;
+  scene.add(rim);
 }
 addImportedLighting();
 
@@ -291,6 +294,12 @@ async function start(){
     await buildMaterialLibrary();
     const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
     model=gltf.scene;
+    model.traverse(object=>{
+      if(object.isMesh){
+        object.castShadow=true;
+        object.receiveShadow=true;
+      }
+    });
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     syncDependentParts();
