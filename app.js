@@ -32,11 +32,44 @@ const camera=new THREE.PerspectiveCamera(50,1,.01,1000);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.NoToneMapping;
+// Lighting/render profile imported from the Three.js Editor project.
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=.38;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFShadowMap;
 host.appendChild(renderer.domElement);
 
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
+
+// Keep the configurator engine intact while reproducing the professional
+// lighting authored in the supplied Three.js Editor project.
+function addStudioLighting(){
+  const key=new THREE.DirectionalLight(0xfffbd5,10.8);
+  key.position.set(4.9671109796,7.6852862983,3.1827224157);
+  key.target.position.set(0,0,0);
+  key.castShadow=true;
+  key.shadow.mapSize.set(2048,2048);
+  key.shadow.camera.near=.1;
+  key.shadow.camera.far=30;
+  scene.add(key,key.target);
+
+  const frontFill=new THREE.PointLight(0xffffff,43.52);
+  frontFill.position.set(1.827827011,1.3240043482,.9686382698);
+  frontFill.castShadow=false;
+  scene.add(frontFill);
+
+  const topFill=new THREE.PointLight(0xffffff,15.44);
+  topFill.position.set(.4621899711,3.6515353564,1.1014241858);
+  topFill.castShadow=false;
+  scene.add(topFill);
+
+  const rim=new THREE.DirectionalLight(0xffffff,-.54);
+  rim.position.set(5,1.7765735353,-.1097480627);
+  rim.target.position.set(0,0,0);
+  scene.add(rim,rim.target);
+}
+addStudioLighting();
 
 let model=null;
 let home={position:new THREE.Vector3(),target:new THREE.Vector3()};
@@ -86,10 +119,12 @@ async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-    const material=new THREE.MeshBasicMaterial({
+    const material=new THREE.MeshStandardMaterial({
       color:item.color??0xffffff,
       map,
-      side:THREE.DoubleSide
+      side:THREE.DoubleSide,
+      roughness:.58,
+      metalness:0
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
@@ -243,6 +278,12 @@ async function start(){
     await buildMaterialLibrary();
     const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
     model=gltf.scene;
+    model.traverse(object=>{
+      if(object.isMesh){
+        object.castShadow=true;
+        object.receiveShadow=true;
+      }
+    });
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     syncDependentParts();
