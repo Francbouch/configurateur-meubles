@@ -32,48 +32,11 @@ const camera=new THREE.PerspectiveCamera(50,1,.01,1000);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=1.08;
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.NoToneMapping;
 host.appendChild(renderer.domElement);
 
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
-
-// Studio lighting designed to stay bright and neutral.
-// Ambient + hemisphere act as a permanent safety floor so PBR materials
-// never collapse to black even if a directional light is occluded.
-function addStudioLighting(){
-  const ambient=new THREE.AmbientLight(0xffffff,1.15);
-  scene.add(ambient);
-
-  const hemi=new THREE.HemisphereLight(0xffffff,0xe8e8e8,1.35);
-  hemi.position.set(0,8,0);
-  scene.add(hemi);
-
-  const key=new THREE.DirectionalLight(0xffffff,1.55);
-  key.position.set(4.5,6.5,5.5);
-  key.castShadow=true;
-  key.shadow.mapSize.set(1024,1024);
-  key.shadow.camera.near=.1;
-  key.shadow.camera.far=40;
-  key.shadow.camera.left=-8;
-  key.shadow.camera.right=8;
-  key.shadow.camera.top=8;
-  key.shadow.camera.bottom=-8;
-  key.shadow.bias=-.00015;
-  scene.add(key);
-
-  const fill=new THREE.DirectionalLight(0xf7f9ff,.85);
-  fill.position.set(-5,3.5,4);
-  scene.add(fill);
-
-  const rim=new THREE.DirectionalLight(0xfff7ee,.55);
-  rim.position.set(-3.5,5,-5.5);
-  scene.add(rim);
-}
-addStudioLighting();
 
 let model=null;
 let home={position:new THREE.Vector3(),target:new THREE.Vector3()};
@@ -123,12 +86,10 @@ async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-    const material=new THREE.MeshStandardMaterial({
+    const material=new THREE.MeshBasicMaterial({
       color:item.color??0xffffff,
       map,
-      side:THREE.DoubleSide,
-      roughness:.68,
-      metalness:0
+      side:THREE.DoubleSide
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
@@ -271,12 +232,6 @@ async function start(){
     await buildMaterialLibrary();
     const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
     model=gltf.scene;
-    model.traverse(object=>{
-      if(object.isMesh){
-        object.castShadow=true;
-        object.receiveShadow=true;
-      }
-    });
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     syncDependentParts();
