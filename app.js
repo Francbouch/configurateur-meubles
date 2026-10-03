@@ -1,6 +1,7 @@
 import * as THREE from "https://esm.sh/three@0.180.0";
 import { OrbitControls } from "https://esm.sh/three@0.180.0/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://esm.sh/three@0.180.0/examples/jsm/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "https://esm.sh/three@0.180.0/examples/jsm/environments/RoomEnvironment.js";
 
 const MODEL_URL="https://pub-32feef14c66c4e86b2ff3d9a6368fcca.r2.dev/Lit_cabinet_Fran%C3%A7ois_UV.glb";
 const MATERIALS=[
@@ -36,14 +37,21 @@ renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=.38;
 renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFShadowMap;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.autoUpdate=true;
 host.appendChild(renderer.domElement);
+
+const pmremGenerator=new THREE.PMREMGenerator(renderer);
+const studioEnvironment=pmremGenerator.fromScene(new RoomEnvironment(),.04).texture;
+scene.environment=studioEnvironment;
 
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
 
 // Keep the configurator engine intact while reproducing the professional
 // lighting authored in the supplied Three.js Editor project.
+let shadowCatcher=null;
+
 function addStudioLighting(){
   const key=new THREE.DirectionalLight(0xfffbd5,10.8);
   key.position.set(4.9671109796,7.6852862983,3.1827224157);
@@ -70,6 +78,26 @@ function addStudioLighting(){
   scene.add(rim,rim.target);
 }
 addStudioLighting();
+
+function addShadowCatcher(object){
+  if(shadowCatcher){
+    scene.remove(shadowCatcher);
+    shadowCatcher.geometry.dispose();
+    shadowCatcher.material.dispose();
+  }
+  const box=new THREE.Box3().setFromObject(object);
+  const size=box.getSize(new THREE.Vector3());
+  const center=box.getCenter(new THREE.Vector3());
+  const span=Math.max(size.x,size.z,size.y)*5;
+  const geometry=new THREE.PlaneGeometry(span,span);
+  const material=new THREE.ShadowMaterial({color:0x000000,opacity:.14});
+  shadowCatcher=new THREE.Mesh(geometry,material);
+  shadowCatcher.rotation.x=-Math.PI/2;
+  shadowCatcher.position.set(center.x,box.min.y-.002,center.z);
+  shadowCatcher.receiveShadow=true;
+  shadowCatcher.renderOrder=-1;
+  scene.add(shadowCatcher);
+}
 
 let model=null;
 let home={position:new THREE.Vector3(),target:new THREE.Vector3()};
@@ -123,8 +151,9 @@ async function buildMaterialLibrary(){
       color:item.color??0xffffff,
       map,
       side:THREE.DoubleSide,
-      roughness:.58,
-      metalness:0
+      roughness:.46,
+      metalness:0,
+      envMapIntensity:.75
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
@@ -285,6 +314,7 @@ async function start(){
       }
     });
     scene.add(model);
+    addShadowCatcher(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     syncDependentParts();
     buildControls();
