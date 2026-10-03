@@ -41,51 +41,19 @@ const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
 
 function addImportedLighting(){
-  // Exact light rig from the supplied project JSON.
-  const key=new THREE.DirectionalLight(0xfffbd5,10.8);
-  key.position.set(4.967110979623884,7.685286298271706,3.1827224156795624);
-  key.castShadow=true;
-  key.shadow.bias=.00005;
-  key.shadow.radius=3.16;
-  key.shadow.mapSize.set(512,512);
-  key.shadow.camera.left=-5;
-  key.shadow.camera.right=5;
-  key.shadow.camera.top=5;
-  key.shadow.camera.bottom=-5;
-  key.shadow.camera.near=.5;
-  key.shadow.camera.far=500;
-  const keyTarget=new THREE.Object3D();
-  scene.add(keyTarget);
-  key.target=keyTarget;
-  scene.add(key);
+  // Exact lighting values from the most recent supplied JSON.
+  const point1=new THREE.PointLight(0xfff9e5,10.97,0,1);
+  point1.position.set(1.7718984247133456,.6987387975422885,2.25882019226354);
+  point1.castShadow=false;
+  scene.add(point1);
 
-  const pointFront=new THREE.PointLight(0xffffff,43.52,32.6,5.8);
-  pointFront.position.set(1.8278270109593606,1.32400434818762,.9686382698051315);
-  pointFront.castShadow=true;
-  pointFront.shadow.mapSize.set(512,512);
-  pointFront.shadow.camera.near=.5;
-  pointFront.shadow.camera.far=32.6;
-  scene.add(pointFront);
+  const point2=new THREE.PointLight(0xe8e2cf,7.58,0,1);
+  point2.position.set(1.8595859801414707,.7509377708434173,-.8727880852276664);
+  point2.castShadow=false;
+  scene.add(point2);
 
-  const pointTop=new THREE.PointLight(0xffffff,15.44,50,.32);
-  pointTop.position.set(.46218997112339477,3.6515353563731474,1.101424185841721);
-  pointTop.castShadow=false;
-  scene.add(pointTop);
-
-  const rim=new THREE.DirectionalLight(0xffffff,-.54);
-  rim.position.set(5,1.776573535312534,-.10974806268320147);
-  rim.castShadow=true;
-  rim.shadow.mapSize.set(512,512);
-  rim.shadow.camera.left=-5;
-  rim.shadow.camera.right=5;
-  rim.shadow.camera.top=5;
-  rim.shadow.camera.bottom=-5;
-  rim.shadow.camera.near=.5;
-  rim.shadow.camera.far=500;
-  const rimTarget=new THREE.Object3D();
-  scene.add(rimTarget);
-  rim.target=rimTarget;
-  scene.add(rim);
+  const ambient=new THREE.AmbientLight(0xfff4e0,1.06);
+  scene.add(ambient);
 }
 addImportedLighting();
 
@@ -137,10 +105,12 @@ async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-    const material=new THREE.MeshBasicMaterial({
+    const material=new THREE.MeshStandardMaterial({
       color:item.color??0xffffff,
       map,
-      side:THREE.DoubleSide
+      side:THREE.DoubleSide,
+      roughness:.5,
+      metalness:0
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
