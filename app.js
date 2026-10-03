@@ -53,6 +53,15 @@ orbit.enableDamping=true;
 let shadowCatcher=null;
 
 function addStudioLighting(){
+  // Neutral fill keeps real PBR materials readable even on faces that
+  // receive little direct light. This avoids crushed-black furniture.
+  const ambient=new THREE.AmbientLight(0xffffff,.72);
+  scene.add(ambient);
+
+  const hemisphere=new THREE.HemisphereLight(0xffffff,0xd7d0c5,1.05);
+  hemisphere.position.set(0,5,0);
+  scene.add(hemisphere);
+
   const key=new THREE.DirectionalLight(0xfffbd5,10.8);
   key.position.set(4.9671109796,7.6852862983,3.1827224157);
   key.target.position.set(0,0,0);
@@ -72,7 +81,7 @@ function addStudioLighting(){
   topFill.castShadow=false;
   scene.add(topFill);
 
-  const rim=new THREE.DirectionalLight(0xffffff,-.54);
+  const rim=new THREE.DirectionalLight(0xffffff,.32);
   rim.position.set(5,1.7765735353,-.1097480627);
   rim.target.position.set(0,0,0);
   scene.add(rim,rim.target);
