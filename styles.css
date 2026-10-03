@@ -235,24 +235,29 @@ canvas{
 
 .part-row{
   position:relative;
-  width:100%;
+  width:calc(100% + 16px);
   min-height:64px;
   display:grid;
   grid-template-columns:24px minmax(0,1fr) 16px;
   align-items:center;
   gap:12px;
-  padding:0;
+  margin-left:-8px;
+  padding:0 8px;
   border:0;
   border-bottom:1px solid var(--hairline-soft);
+  border-radius:11px;
   background:transparent;
   color:var(--ink);
   text-align:left;
   cursor:pointer;
-  transition:padding .24s cubic-bezier(.2,.8,.2,1),color .2s ease;
+  transition:
+    background .24s cubic-bezier(.2,.8,.2,1),
+    color .2s ease,
+    transform .24s cubic-bezier(.2,.8,.2,1);
 }
 
-.part-row:last-child{border-bottom:0}
-.part-row:hover{padding-left:5px}
+.part-row:last-child{border-bottom-color:transparent}
+.part-row:hover{background:rgba(29,29,31,.016)}
 
 .part-index{
   align-self:start;
@@ -303,15 +308,20 @@ canvas{
   color:#1d1d1f;
 }
 
+.part-row.active{
+  background:rgba(29,29,31,.032);
+}
+
+.part-row.active .part-name{
+  color:#111113;
+}
+
+.part-row.active .part-current{
+  color:#66666b;
+}
+
 .part-row.active:before{
-  content:"";
-  position:absolute;
-  left:0;
-  top:50%;
-  width:1px;
-  height:24px;
-  transform:translateY(-50%);
-  background:#1d1d1f;
+  display:none;
 }
 
 .material-choice{
