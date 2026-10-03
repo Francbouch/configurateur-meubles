@@ -33,29 +33,10 @@ const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.NoToneMapping;
-renderer.shadowMap.enabled=true;
-renderer.shadowMap.type=THREE.PCFShadowMap;
 host.appendChild(renderer.domElement);
 
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;
-
-function addImportedLighting(){
-  // Exact lighting values from the most recent supplied JSON.
-  const point1=new THREE.PointLight(0xfff9e5,10.97,0,1);
-  point1.position.set(1.7718984247133456,.6987387975422885,2.25882019226354);
-  point1.castShadow=false;
-  scene.add(point1);
-
-  const point2=new THREE.PointLight(0xe8e2cf,7.58,0,1);
-  point2.position.set(1.8595859801414707,.7509377708434173,-.8727880852276664);
-  point2.castShadow=false;
-  scene.add(point2);
-
-  const ambient=new THREE.AmbientLight(0xfff4e0,1.06);
-  scene.add(ambient);
-}
-addImportedLighting();
 
 let model=null;
 let home={position:new THREE.Vector3(),target:new THREE.Vector3()};
@@ -105,12 +86,10 @@ async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-    const material=new THREE.MeshStandardMaterial({
+    const material=new THREE.MeshBasicMaterial({
       color:item.color??0xffffff,
       map,
-      side:THREE.DoubleSide,
-      roughness:.5,
-      metalness:0
+      side:THREE.DoubleSide
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
@@ -253,12 +232,6 @@ async function start(){
     await buildMaterialLibrary();
     const gltf=await new GLTFLoader().loadAsync(MODEL_URL);
     model=gltf.scene;
-    model.traverse(object=>{
-      if(object.isMesh){
-        object.castShadow=true;
-        object.receiveShadow=true;
-      }
-    });
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
     syncDependentParts();
