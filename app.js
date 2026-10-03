@@ -263,17 +263,6 @@ function buildControls(){
       };
       grid.appendChild(button);
     });
-
-    if(activePart.mesh==="CAISSON" || activePart.mesh==="INTERIEUR"){
-      const hint=document.createElement("p");
-      hint.className="material-hint";
-      hint.textContent=activePart.mesh==="INTERIEUR"
-        ? "Disponible : la finition du caisson, blanc ou noir."
-        : (selectedCodes.get("FACADE")==="NOIR" || selectedCodes.get("FACADE")==="175")
-          ? "Façade blanche ou noire : toutes les finitions sont disponibles."
-          : "Disponible : la finition de la façade, blanc ou noir.";
-      grid.parentElement.appendChild(hint);
-    }
   }
 
   function renderPartList(){
