@@ -35,7 +35,7 @@ renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 // Lighting/render profile imported from the Three.js Editor project.
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=.38;
+renderer.toneMappingExposure=1.0;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.shadowMap.autoUpdate=true;
@@ -55,10 +55,10 @@ let shadowCatcher=null;
 function addStudioLighting(){
   // Neutral fill keeps real PBR materials readable even on faces that
   // receive little direct light. This avoids crushed-black furniture.
-  const ambient=new THREE.AmbientLight(0xffffff,.72);
+  const ambient=new THREE.AmbientLight(0xffffff,1.15);
   scene.add(ambient);
 
-  const hemisphere=new THREE.HemisphereLight(0xffffff,0xd7d0c5,1.05);
+  const hemisphere=new THREE.HemisphereLight(0xffffff,0xd7d0c5,1.25);
   hemisphere.position.set(0,5,0);
   scene.add(hemisphere);
 
@@ -160,9 +160,12 @@ async function buildMaterialLibrary(){
       color:item.color??0xffffff,
       map,
       side:THREE.DoubleSide,
-      roughness:.46,
+      roughness:.52,
       metalness:0,
-      envMapIntensity:.75
+      envMapIntensity:.7,
+      emissive:map ? 0xffffff : 0x000000,
+      emissiveMap:map,
+      emissiveIntensity:map ? .16 : 0
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
