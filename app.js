@@ -35,9 +35,9 @@ function createStudioBackground(){
 
   const wash=ctx.createRadialGradient(420,310,60,512,500,760);
   wash.addColorStop(0,"#ffffff");
-  wash.addColorStop(.48,"#fbfbfa");
-  wash.addColorStop(.78,"#f5f5f3");
-  wash.addColorStop(1,"#eeeeeb");
+  wash.addColorStop(.34,"#fbfbfa");
+  wash.addColorStop(.68,"#eeeeeb");
+  wash.addColorStop(1,"#ddddda");
   ctx.fillStyle=wash;
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
@@ -210,7 +210,7 @@ function addStudioScene(object){
   // Invisible-to-light white floor that receives the soft studio shadow.
   const floor=new THREE.Mesh(
     new THREE.PlaneGeometry(max*7,max*7),
-    new THREE.ShadowMaterial({color:0x000000,opacity:.12})
+    new THREE.ShadowMaterial({color:0x000000,opacity:.16})
   );
   floor.rotation.x=-Math.PI/2;
   floor.position.set(center.x,floorY,center.z);
@@ -226,7 +226,7 @@ function addStudioScene(object){
       map:createContactShadowTexture(),
       transparent:true,
       depthWrite:false,
-      opacity:.72,
+      opacity:.86,
       side:THREE.DoubleSide
     })
   );
@@ -255,33 +255,127 @@ function addStudioScene(object){
   scene.add(key.target);
 }
 
+function makeStudioMaterial(mesh,item,map){
+  mesh.geometry.computeBoundingBox();
+  const bbox=mesh.geometry.boundingBox;
+  const bmin=bbox?.min?.clone() ?? new THREE.Vector3(-1,-1,-1);
+  const bmax=bbox?.max?.clone() ?? new THREE.Vector3(1,1,1);
+  const safeColor=new THREE.Color(item.code==="NOIR" ? 0x181818 : (item.color??0xffffff));
+
+  return new THREE.ShaderMaterial({
+    uniforms:{
+      uMap:{value:map},
+      uHasMap:{value:!!map},
+      uColor:{value:safeColor},
+      uMin:{value:bmin},
+      uMax:{value:bmax}
+    },
+    vertexShader:`
+      varying vec2 vUv;
+      varying vec3 vObjPos;
+      varying vec3 vWorldPos;
+      varying vec3 vWorldNormal;
+
+      void main(){
+        vUv=uv;
+        vObjPos=position;
+        vec4 worldPos=modelMatrix*vec4(position,1.0);
+        vWorldPos=worldPos.xyz;
+        vWorldNormal=normalize(mat3(modelMatrix)*normal);
+        gl_Position=projectionMatrix*viewMatrix*worldPos;
+      }
+    `,
+    fragmentShader:`
+      uniform sampler2D uMap;
+      uniform bool uHasMap;
+      uniform vec3 uColor;
+      uniform vec3 uMin;
+      uniform vec3 uMax;
+
+      varying vec2 vUv;
+      varying vec3 vObjPos;
+      varying vec3 vWorldPos;
+      varying vec3 vWorldNormal;
+
+      float gaussian(float x,float center,float width){
+        float d=(x-center)/width;
+        return exp(-d*d);
+      }
+
+      void main(){
+        vec3 base=uColor;
+        if(uHasMap){
+          base*=texture2D(uMap,vUv).rgb;
+        }
+
+        vec3 n=normalize(vWorldNormal);
+        vec3 viewDir=normalize(cameraPosition-vWorldPos);
+
+        // Fake three-point studio lighting with a hard brightness floor.
+        vec3 keyDir=normalize(vec3(0.50,0.78,0.46));
+        vec3 fillDir=normalize(vec3(-0.72,0.30,0.34));
+        vec3 rimDir=normalize(vec3(-0.32,0.52,-0.79));
+
+        float key=max(dot(n,keyDir),0.0);
+        float fill=max(dot(n,fillDir),0.0);
+        float rim=pow(max(dot(n,rimDir),0.0),1.35);
+
+        float lightLevel=0.72 + key*0.24 + fill*0.085 + rim*0.075;
+
+        vec3 span=max(uMax-uMin,vec3(0.0001));
+        vec3 p=clamp((vObjPos-uMin)/span,0.0,1.0);
+
+        // Large softbox streaks across planar cabinet surfaces.
+        float frontness=pow(abs(n.z),1.55);
+        float sideness=pow(abs(n.x),1.55);
+        float topness=pow(abs(n.y),1.8);
+
+        float frontBox=gaussian(p.x,0.30 + (p.y-.5)*0.08,0.15);
+        float frontFill=gaussian(p.x,0.72,0.27)*0.38;
+        float sideBox=gaussian(p.z,0.34 + (p.y-.5)*0.06,0.18);
+        float topBox=gaussian(p.x,0.38,0.25);
+
+        vec3 reflected=reflect(-viewDir,n);
+        vec3 boxDir=normalize(vec3(-0.38,0.36,0.85));
+        float glossy=pow(max(dot(reflected,boxDir),0.0),5.0);
+
+        float softbox=
+          frontness*(frontBox*0.18 + frontFill*0.07) +
+          sideness*(sideBox*0.15) +
+          topness*(topBox*0.11) +
+          glossy*0.10;
+
+        // Slight lower-edge falloff for product-photo depth.
+        float vertical=0.94 + p.y*0.07;
+
+        vec3 color=base*lightLevel*vertical;
+        color += vec3(1.0,0.985,0.955)*softbox;
+
+        // Never allow the textured finish to collapse to black.
+        color=max(color,base*0.64);
+
+        gl_FragColor=vec4(color,1.0);
+      }
+    `,
+    side:THREE.DoubleSide
+  });
+}
+
 async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-
-    // Base texture stays completely light-independent.
-    // A dark studio cube map adds only photographic softbox reflections.
-    const safeColor=item.code==="NOIR" ? 0x161616 : (item.color??0xffffff);
-    const material=new THREE.MeshBasicMaterial({
-      color:safeColor,
-      map,
-      envMap:studioEnvironment,
-      combine:THREE.AddOperation,
-      reflectivity:item.code==="NOIR" ? .38 : .22,
-      side:THREE.DoubleSide
-    });
-
-    material.name=item.code;
-    materialLibrary.set(item.code,material);
+    materialLibrary.set(item.code,{item,map});
   }));
 }
 
 function applyMaterial(meshName,code){
   const mesh=model?.getObjectByName(meshName);
-  const material=materialLibrary.get(code);
-  if(!mesh||!material)return;
-  mesh.material=material.clone();
+  const entry=materialLibrary.get(code);
+  if(!mesh||!entry)return;
+  if(mesh.material?.dispose) mesh.material.dispose();
+  mesh.material=makeStudioMaterial(mesh,entry.item,entry.map);
+  mesh.material.name=code;
   mesh.material.needsUpdate=true;
 }
 
