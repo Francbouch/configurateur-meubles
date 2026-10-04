@@ -82,15 +82,61 @@ function loadTexture(src){
   });
 }
 
+function createStudioMatcap(){
+  const size=256;
+  const canvas=document.createElement("canvas");
+  canvas.width=size;
+  canvas.height=size;
+  const ctx=canvas.getContext("2d");
+  const image=ctx.createImageData(size,size);
+
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const nx=(x/(size-1))*2-1;
+      const ny=(y/(size-1))*2-1;
+      const r2=nx*nx+ny*ny;
+
+      // Bright, neutral studio response with a guaranteed light floor.
+      const key=Math.max(0,1-Math.hypot(nx+.28,ny+.34)*.72);
+      const fill=Math.max(0,1-Math.hypot(nx-.42,ny-.05)*.92);
+      const edge=Math.max(0,1-r2*.22);
+      const spec=Math.exp(-((nx+.22)*(nx+.22)+(ny+.28)*(ny+.28))/.075);
+
+      let level=.76 + key*.16 + fill*.055 + edge*.035 + spec*.085;
+      level=Math.min(1,Math.max(.74,level));
+
+      const i=(y*size+x)*4;
+      image.data[i]=Math.round(255*level);
+      image.data[i+1]=Math.round(255*Math.min(1,level*.992));
+      image.data[i+2]=Math.round(255*Math.min(1,level*.975));
+      image.data[i+3]=255;
+    }
+  }
+
+  ctx.putImageData(image,0,0);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.needsUpdate=true;
+  return texture;
+}
+
+const studioMatcap=createStudioMatcap();
+
 async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
     let map=null;
     if(item.src) map=await loadTexture(item.src);
-    const material=new THREE.MeshBasicMaterial({
-      color:item.color??0xffffff,
+
+    // Matcap gives the model a professional studio-lighted appearance
+    // without any scene lights, so the finish can never go black from lighting.
+    const safeColor=item.code==="NOIR" ? 0x161616 : (item.color??0xffffff);
+    const material=new THREE.MeshMatcapMaterial({
+      color:safeColor,
       map,
+      matcap:studioMatcap,
       side:THREE.DoubleSide
     });
+
     material.name=item.code;
     materialLibrary.set(item.code,material);
   }));
