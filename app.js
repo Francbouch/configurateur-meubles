@@ -33,7 +33,7 @@ const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure=.65;
+renderer.toneMappingExposure=.38;
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 host.appendChild(renderer.domElement);
@@ -45,14 +45,14 @@ orbit.enableDamping=true;
 // The extra ambient/hemisphere floor is deliberate: it keeps every
 // textured finish readable even if a direct light is occluded.
 function addModelLighting(){
-  const ambient=new THREE.AmbientLight(0xfff4e0,1.15);
+  const ambient=new THREE.AmbientLight(0xfff4e0,.38);
   scene.add(ambient);
 
-  const hemi=new THREE.HemisphereLight(0xffffff,0xe8e4dc,.85);
+  const hemi=new THREE.HemisphereLight(0xffffff,0xe8e4dc,.28);
   hemi.position.set(0,6,0);
   scene.add(hemi);
 
-  const key=new THREE.DirectionalLight(0xfffbd5,4.85);
+  const key=new THREE.DirectionalLight(0xfffbd5,10.8);
   key.position.set(4.967110979623884,7.685286298271706,3.1827224156795624);
   key.castShadow=true;
   key.shadow.bias=.00005;
@@ -67,19 +67,21 @@ function addModelLighting(){
   key.shadow.camera.far=500;
   scene.add(key);
 
-  const front=new THREE.PointLight(0xffffff,19.6,32.6,5.8);
+  const front=new THREE.PointLight(0xffffff,43.52,32.6,5.8);
   front.position.set(1.8278270109593606,1.32400434818762,.9686382698051315);
-  front.castShadow=false;
+  front.castShadow=true;
+  front.shadow.mapSize.set(512,512);
+  front.shadow.bias=0;
   scene.add(front);
 
-  const top=new THREE.PointLight(0xffffff,6.95,50,.32);
+  const top=new THREE.PointLight(0xffffff,15.44,50,.32);
   top.position.set(.46218997112339477,3.6515353563731474,1.101424185841721);
   top.castShadow=false;
   scene.add(top);
 
   // The JSON contains a negative-intensity directional light.
   // Use its position but keep a small positive rim to avoid subtractive blackouts.
-  const rim=new THREE.DirectionalLight(0xffffff,.35);
+  const rim=new THREE.DirectionalLight(0xffffff,.18);
   rim.position.set(5,1.776573535312534,-.10974806268320147);
   scene.add(rim);
 }
@@ -141,7 +143,7 @@ async function buildMaterialLibrary(){
       metalness:0,
       emissive:map?0xffffff:0x000000,
       emissiveMap:map,
-      emissiveIntensity:map ? .12 : 0
+      emissiveIntensity:map ? .04 : 0
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
