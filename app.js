@@ -320,7 +320,7 @@ function makeStudioMaterial(mesh,item,map){
         float fill=max(dot(n,fillDir),0.0);
         float rim=pow(max(dot(n,rimDir),0.0),1.35);
 
-        float lightLevel=0.72 + key*0.24 + fill*0.085 + rim*0.075;
+        float lightLevel=0.94 + key*0.12 + fill*0.045 + rim*0.045;
 
         vec3 span=max(uMax-uMin,vec3(0.0001));
         vec3 p=clamp((vObjPos-uMin)/span,0.0,1.0);
@@ -346,13 +346,18 @@ function makeStudioMaterial(mesh,item,map){
           glossy*0.10;
 
         // Slight lower-edge falloff for product-photo depth.
-        float vertical=0.94 + p.y*0.07;
+        float vertical=0.985 + p.y*0.025;
 
+        // Keep the material close to its source brightness.
+        // Studio lighting now adds highlights instead of darkening the finish.
         vec3 color=base*lightLevel*vertical;
-        color += vec3(1.0,0.985,0.955)*softbox;
+        color += vec3(1.0,0.992,0.975)*softbox;
 
-        // Never allow the textured finish to collapse to black.
-        color=max(color,base*0.64);
+        // Gentle lift preserves Tafisa finish brightness and color accuracy.
+        color=mix(color,base,0.34);
+
+        // Never let the studio treatment make a finish materially darker.
+        color=max(color,base*0.92);
 
         gl_FragColor=vec4(color,1.0);
       }
