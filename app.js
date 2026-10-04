@@ -141,7 +141,7 @@ async function buildMaterialLibrary(){
       metalness:0,
       emissive:map?0xffffff:0x000000,
       emissiveMap:map,
-      emissiveIntensity:map?.12:0
+      emissiveIntensity:map ? .12 : 0
     });
     material.name=item.code;
     materialLibrary.set(item.code,material);
