@@ -105,45 +105,73 @@ function loadTexture(src){
   });
 }
 
-function createStudioMatcap(){
-  const size=256;
+function createStudioEnvFace(type){
+  const size=512;
   const canvas=document.createElement("canvas");
   canvas.width=size;
   canvas.height=size;
   const ctx=canvas.getContext("2d");
-  const image=ctx.createImageData(size,size);
 
-  for(let y=0;y<size;y++){
-    for(let x=0;x<size;x++){
-      const nx=(x/(size-1))*2-1;
-      const ny=(y/(size-1))*2-1;
-      const r2=nx*nx+ny*ny;
+  // Dark neutral studio room: only the softboxes show up as reflections.
+  const base=ctx.createLinearGradient(0,0,0,size);
+  base.addColorStop(0,"#242424");
+  base.addColorStop(.55,"#111111");
+  base.addColorStop(1,"#050505");
+  ctx.fillStyle=base;
+  ctx.fillRect(0,0,size,size);
 
-      // Bright, neutral studio response with a guaranteed light floor.
-      const key=Math.max(0,1-Math.hypot(nx+.28,ny+.34)*.72);
-      const fill=Math.max(0,1-Math.hypot(nx-.42,ny-.05)*.92);
-      const edge=Math.max(0,1-r2*.22);
-      const spec=Math.exp(-((nx+.22)*(nx+.22)+(ny+.28)*(ny+.28))/.075);
-
-      let level=.62 + key*.27 + fill*.075 + edge*.025 + spec*.12;
-      level=Math.min(1,Math.max(.60,level));
-
-      const i=(y*size+x)*4;
-      image.data[i]=Math.round(255*level);
-      image.data[i+1]=Math.round(255*Math.min(1,level*.992));
-      image.data[i+2]=Math.round(255*Math.min(1,level*.975));
-      image.data[i+3]=255;
-    }
+  function softbox(x,y,w,h,alpha){
+    ctx.save();
+    ctx.shadowColor="rgba(255,255,255,"+(alpha*.72)+")";
+    ctx.shadowBlur=42;
+    const g=ctx.createLinearGradient(x,y,x+w,y+h);
+    g.addColorStop(0,"rgba(255,255,255,"+(alpha*.55)+")");
+    g.addColorStop(.35,"rgba(255,255,255,"+alpha+")");
+    g.addColorStop(1,"rgba(240,245,255,"+(alpha*.52)+")");
+    ctx.fillStyle=g;
+    ctx.fillRect(x,y,w,h);
+    ctx.restore();
   }
 
-  ctx.putImageData(image,0,0);
-  const texture=new THREE.CanvasTexture(canvas);
-  texture.colorSpace=THREE.SRGBColorSpace;
-  texture.needsUpdate=true;
-  return texture;
+  // Different panels around the object give broad photographic reflections
+  // on the front, sides and top as the user rotates the furniture.
+  if(type==="px"){
+    softbox(55,82,150,350,.98);
+    softbox(330,130,82,235,.42);
+  }else if(type==="nx"){
+    softbox(300,70,145,365,.82);
+    softbox(72,165,88,220,.34);
+  }else if(type==="py"){
+    softbox(112,64,288,130,.90);
+    softbox(330,265,95,155,.32);
+  }else if(type==="ny"){
+    softbox(165,120,180,250,.22);
+  }else if(type==="pz"){
+    softbox(64,88,125,345,.92);
+    softbox(322,105,112,310,.52);
+  }else{
+    softbox(292,76,150,360,.78);
+    softbox(70,190,95,185,.30);
+  }
+
+  return canvas;
 }
 
-const studioMatcap=createStudioMatcap();
+function createStudioEnvironment(){
+  const env=new THREE.CubeTexture([
+    createStudioEnvFace("px"),
+    createStudioEnvFace("nx"),
+    createStudioEnvFace("py"),
+    createStudioEnvFace("ny"),
+    createStudioEnvFace("pz"),
+    createStudioEnvFace("nz")
+  ]);
+  env.colorSpace=THREE.SRGBColorSpace;
+  env.needsUpdate=true;
+  return env;
+}
+
+const studioEnvironment=createStudioEnvironment();
 
 function createContactShadowTexture(){
   const size=512;
@@ -208,7 +236,7 @@ function addStudioScene(object){
   scene.add(contact);
 
   // Key light exists only to project a photographic floor shadow.
-  // MeshMatcapMaterial ignores it, so it cannot turn the furniture black.
+  // MeshBasicMaterial ignores it, so it cannot turn the furniture black.
   const key=new THREE.DirectionalLight(0xffffff,3.1);
   key.position.set(center.x+max*1.25,center.y+max*1.8,center.z+max*1.35);
   key.target.position.copy(center);
@@ -232,13 +260,15 @@ async function buildMaterialLibrary(){
     let map=null;
     if(item.src) map=await loadTexture(item.src);
 
-    // Matcap gives the model a professional studio-lighted appearance
-    // without any scene lights, so the finish can never go black from lighting.
+    // Base texture stays completely light-independent.
+    // A dark studio cube map adds only photographic softbox reflections.
     const safeColor=item.code==="NOIR" ? 0x161616 : (item.color??0xffffff);
-    const material=new THREE.MeshMatcapMaterial({
+    const material=new THREE.MeshBasicMaterial({
       color:safeColor,
       map,
-      matcap:studioMatcap,
+      envMap:studioEnvironment,
+      combine:THREE.AddOperation,
+      reflectivity:item.code==="NOIR" ? .38 : .22,
       side:THREE.DoubleSide
     });
 
