@@ -26,13 +26,36 @@ const empty=document.querySelector("#empty");
 const controlsRoot=document.querySelector("#materialControls");
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0xffffff);
+
+function createStudioBackground(){
+  const canvas=document.createElement("canvas");
+  canvas.width=1024;
+  canvas.height=1024;
+  const ctx=canvas.getContext("2d");
+
+  const wash=ctx.createRadialGradient(420,310,60,512,500,760);
+  wash.addColorStop(0,"#ffffff");
+  wash.addColorStop(.48,"#fbfbfa");
+  wash.addColorStop(.78,"#f5f5f3");
+  wash.addColorStop(1,"#eeeeeb");
+  ctx.fillStyle=wash;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.needsUpdate=true;
+  return texture;
+}
+
+scene.background=createStudioBackground();
 
 const camera=new THREE.PerspectiveCamera(50,1,.01,1000);
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.NoToneMapping;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 host.appendChild(renderer.domElement);
 
 const orbit=new OrbitControls(camera,renderer.domElement);
@@ -102,8 +125,8 @@ function createStudioMatcap(){
       const edge=Math.max(0,1-r2*.22);
       const spec=Math.exp(-((nx+.22)*(nx+.22)+(ny+.28)*(ny+.28))/.075);
 
-      let level=.76 + key*.16 + fill*.055 + edge*.035 + spec*.085;
-      level=Math.min(1,Math.max(.74,level));
+      let level=.62 + key*.27 + fill*.075 + edge*.025 + spec*.12;
+      level=Math.min(1,Math.max(.60,level));
 
       const i=(y*size+x)*4;
       image.data[i]=Math.round(255*level);
@@ -121,6 +144,88 @@ function createStudioMatcap(){
 }
 
 const studioMatcap=createStudioMatcap();
+
+function createContactShadowTexture(){
+  const size=512;
+  const canvas=document.createElement("canvas");
+  canvas.width=size;
+  canvas.height=size;
+  const ctx=canvas.getContext("2d");
+  const g=ctx.createRadialGradient(size/2,size/2,12,size/2,size/2,size*.46);
+  g.addColorStop(0,"rgba(0,0,0,.22)");
+  g.addColorStop(.34,"rgba(0,0,0,.12)");
+  g.addColorStop(.68,"rgba(0,0,0,.045)");
+  g.addColorStop(1,"rgba(0,0,0,0)");
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,size,size);
+  const texture=new THREE.CanvasTexture(canvas);
+  texture.colorSpace=THREE.SRGBColorSpace;
+  texture.needsUpdate=true;
+  return texture;
+}
+
+function addStudioScene(object){
+  const box=new THREE.Box3().setFromObject(object);
+  const size=box.getSize(new THREE.Vector3());
+  const center=box.getCenter(new THREE.Vector3());
+  const max=Math.max(size.x,size.y,size.z)||1;
+  const floorY=box.min.y-max*.006;
+
+  // The furniture stays light-independent. It only casts shadows.
+  object.traverse(o=>{
+    if(o.isMesh){
+      o.castShadow=true;
+      o.receiveShadow=false;
+    }
+  });
+
+  // Invisible-to-light white floor that receives the soft studio shadow.
+  const floor=new THREE.Mesh(
+    new THREE.PlaneGeometry(max*7,max*7),
+    new THREE.ShadowMaterial({color:0x000000,opacity:.12})
+  );
+  floor.rotation.x=-Math.PI/2;
+  floor.position.set(center.x,floorY,center.z);
+  floor.receiveShadow=true;
+  floor.renderOrder=-1;
+  scene.add(floor);
+
+  // Guaranteed contact shadow: keeps the furniture visually grounded
+  // even if browser shadow filtering varies.
+  const contact=new THREE.Mesh(
+    new THREE.PlaneGeometry(Math.max(size.x*1.5,max*.55),Math.max(size.z*1.45,max*.42)),
+    new THREE.MeshBasicMaterial({
+      map:createContactShadowTexture(),
+      transparent:true,
+      depthWrite:false,
+      opacity:.72,
+      side:THREE.DoubleSide
+    })
+  );
+  contact.rotation.x=-Math.PI/2;
+  contact.position.set(center.x,floorY+max*.0015,center.z);
+  contact.renderOrder=0;
+  scene.add(contact);
+
+  // Key light exists only to project a photographic floor shadow.
+  // MeshMatcapMaterial ignores it, so it cannot turn the furniture black.
+  const key=new THREE.DirectionalLight(0xffffff,3.1);
+  key.position.set(center.x+max*1.25,center.y+max*1.8,center.z+max*1.35);
+  key.target.position.copy(center);
+  key.castShadow=true;
+  key.shadow.mapSize.set(2048,2048);
+  key.shadow.camera.left=-max*1.25;
+  key.shadow.camera.right=max*1.25;
+  key.shadow.camera.top=max*1.45;
+  key.shadow.camera.bottom=-max*.65;
+  key.shadow.camera.near=max*.05;
+  key.shadow.camera.far=max*6;
+  key.shadow.bias=-.00015;
+  key.shadow.normalBias=max*.00012;
+  key.shadow.radius=5;
+  scene.add(key);
+  scene.add(key.target);
+}
 
 async function buildMaterialLibrary(){
   await Promise.all(MATERIALS.map(async item=>{
@@ -280,6 +385,7 @@ async function start(){
     model=gltf.scene;
     scene.add(model);
     PARTS.forEach(part=>applyMaterial(part.mesh,part.initial));
+    addStudioScene(model);
     syncDependentParts();
     buildControls();
     frame(model);
